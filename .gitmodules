@@ -1,0 +1,8 @@
+[submodule "depthai-ros"]
+	path = camera/depthai-ros
+	url = git@github.com:luxonis/depthai-ros.git
+	branch = humble
+[submodule "lidar/ouster-ros"]
+	path = lidar/ouster-ros
+	url = git@github.com:ouster-lidar/ouster-ros.git
+	branch = ros2
