@@ -6,9 +6,3 @@
 	path = camera/depthai-ros
 	url = git@github.com:luxonis/depthai-ros.git
 	branch = humble
-[submodule "middleware/rmw_cyclonedds"]
-	path = middleware/rmw_cyclonedds
-	url = git@github.com:ros2/rmw_cyclonedds.git
-[submodule "middleware/cyclonedds"]
-	path = middleware/cyclonedds
-	url = https://github.com/eclipse-cyclonedds/cyclonedds
