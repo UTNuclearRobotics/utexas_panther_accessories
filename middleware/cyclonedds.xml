@@ -1,30 +1,23 @@
-<?xml version="1.0" encoding="UTF-8" ?>
-<CycloneDDS xmlns="https://cdds.io/config" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://cdds.io/config https://raw.githubusercontent.com/eclipse-cyclonedds/cyclonedds/master/etc/cyclonedds.xsd">
-    <Domain id="any">
+<?xml version="1.0" encoding="utf-8"?>
+<CycloneDDS
+    xmlns="https://cdds.io/config"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="https://cdds.io/config https://raw.githubusercontent.com/eclipse-cyclonedds/cyclonedds/master/etc/cyclonedds.xsd"
+>
+    <Domain Id="any">
         <General>
-            <NetworkInterfaceAddress>auto</NetworkInterfaceAddress>
-            <AllowMulticast>false</AllowMulticast>
+            <Interfaces>
+                <NetworkInterface autodetermine="true" priority="default"
+                    multicast="default" />
+            </Interfaces>
+            <AllowMulticast>default</AllowMulticast>
             <MaxMessageSize>65500B</MaxMessageSize>
-        <FragmentSize>4000B</FragmentSize>
-        <Transport>udp6</Transport>
         </General>
-    <Discovery>
-        <Peers>
-            <!-- Bagheera external wlp7s0 -->
-            <Peer address="fe80::289a:c8ff:fe1d:808f"/> 
-            <!-- Bagheer RPi eth0 -->
-            <Peer address="fe80::e65f:1ff:fee1:e57a"/>
-        </Peers>
-        <ParticipantIndex>auto</ParticipantIndex>
-    </Discovery>
-        <Internal>
-            <Watermarks>
-                <WhcHigh>500kB</WhcHigh>
-            </Watermarks>
-        </Internal>
-        <Tracing>
-            <Verbosity>severe</Verbosity>
-            <OutputFile>stdout</OutputFile>
-        </Tracing>
+        <!-- <Tracing>
+            <Verbosity>config</Verbosity>
+            <OutputFile>
+                ${HOME}/dds/log/cdds.log.${CYCLONEDDS_PID}
+            </OutputFile>
+        </Tracing> -->
     </Domain>
 </CycloneDDS>
