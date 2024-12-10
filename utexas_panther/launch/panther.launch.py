@@ -19,17 +19,9 @@ from launch_ros.substitutions import FindPackageShare
 def launch_setup(context, *args, **kwargs):
     # ros2 launch depthai_ros_driver camera.launch.py
     depthai_camera = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource([
-            PathJoinSubstitution([
-                FindPackageShare('depthai_ros_driver'),
-                'launch',
-                'camera.launch.py'
-            ])
-        ]),
-        launch_arguments={
-            'frame_rate': '30.0'
-        }.items()
-        ,
+        PythonLaunchDescriptionSource(
+            [PathJoinSubstitution([FindPackageShare("depthai_ros_driver"), "launch", "camera.launch.py"])]
+        )
     )
 
     return [
