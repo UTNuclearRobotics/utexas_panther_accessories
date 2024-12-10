@@ -26,6 +26,10 @@ def launch_setup(context, *args, **kwargs):
                 'camera.launch.py'
             ])
         ]),
+        launch_arguments={
+            'frame_rate': '30.0'
+        }.items()
+        ,
     )
 
     return [
