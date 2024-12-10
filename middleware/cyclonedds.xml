@@ -7,12 +7,20 @@
     <Domain Id="any">
         <General>
             <Interfaces>
-                <NetworkInterface autodetermine="true" priority="default"
-                    multicast="default" />
+                <NetworkInterface autodetermine="true" priority="default" />
             </Interfaces>
-            <AllowMulticast>default</AllowMulticast>
+            <AllowMulticast>false</AllowMulticast>
             <MaxMessageSize>65500B</MaxMessageSize>
         </General>
+        <Discovery>
+            <ParticipantIndex>auto</ParticipantIndex>
+            <Peers>
+                <Peer Address="localhost" />
+                <Peer Address="10.15.20.2" />
+                <Peer Address="10.15.20.3" />
+            </Peers>
+            <MaxAutoParticipantIndex>120</MaxAutoParticipantIndex>
+        </Discovery>
         <!-- <Tracing>
             <Verbosity>config</Verbosity>
             <OutputFile>
