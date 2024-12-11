@@ -21,7 +21,8 @@ def launch_setup(context, *args, **kwargs):
     depthai_camera = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             [PathJoinSubstitution([FindPackageShare("depthai_ros_driver"), "launch", "camera.launch.py"])]
-        )
+        ),
+        launch_arguments={"camera_i_restart_on_diagnostics_error": "true"}.items(),
     )
 
     return [
