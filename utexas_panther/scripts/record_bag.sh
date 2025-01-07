@@ -6,4 +6,7 @@ ros2 bag record -o $HOME/$BAG_NAME \
     /oak/rgb/image_raw/compressed \
     /oak/rgb/camera_info \
     /oak/imu/data \
-    /panther/odometry/filtered
+    /ouster/imu \
+    /panther/odometry/filtered \
+    /panther/odometry/wheels \
+    /panther/imu/data
