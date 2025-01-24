@@ -8,11 +8,12 @@ from launch.substitutions import (
     PathJoinSubstitution,
 )
 from launch_ros.substitutions import FindPackageShare
+from launch_ros.actions import Node
 
 
 def launch_setup(context, *args, **kwargs):
     # ros2 launch ouster_ros sensor.launch.xml sensor_hostname:=192.168.1.100 viz:=false
-    depthai_camera = IncludeLaunchDescription(
+    lidar_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             [PathJoinSubstitution([FindPackageShare("ouster_ros"), "launch", "sensor.launch.xml"])]
         ),
@@ -22,8 +23,17 @@ def launch_setup(context, *args, **kwargs):
         }.items(),
     )
 
+    # ros2 run tf2_ros static_transform_publisher 0.0 0.0 0.589 0.0 0.0 0.0 /panther/base_link /os_sensor
+    static_transform_publisher = Node(
+        package="tf2_ros",
+        executable="static_transform_publisher",
+        name="static_transform_publisher",
+        arguments=["0.0", "0.0", "0.589", "0.0", "0.0", "0.0", "/panther/base_link", "/os_sensor"],
+    )
+
     return [
-        depthai_camera,
+        lidar_launch,
+        static_transform_publisher,
     ]
 
 

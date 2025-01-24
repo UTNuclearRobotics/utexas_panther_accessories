@@ -1,4 +1,3 @@
-import yaml
 from launch import LaunchDescription
 from launch.actions import (
     DeclareLaunchArgument,
@@ -25,6 +24,23 @@ def launch_setup(context, *args, **kwargs):
         launch_arguments={"camera_i_restart_on_diagnostics_error": "true"}.items(),
     )
 
+    # ros2 run tf2_ros static_transform_publisher 0.2286 0.0 0.5715 0.0 0.0 0.0 /panther/base_link /oak-d-base-frame
+    static_transform_publisher = Node(
+        package="tf2_ros",
+        executable="static_transform_publisher",
+        name="static_transform_publisher",
+        arguments=[
+            "0.2886",
+            "0.0",
+            "0.5715",
+            "0.0",
+            "0.0",
+            "0.0",
+            "/panther/base_link",
+            "/oak-d-base-frame",
+        ],
+    )
+
     return [
         depthai_camera,
     ]
@@ -32,18 +48,4 @@ def launch_setup(context, *args, **kwargs):
 
 def generate_launch_description():
     declared_arguments = []
-
-    # declared_arguments.append(
-    #     DeclareLaunchArgument(
-    #         'robot_configs',
-    #         default_value=PathJoinSubstitution([
-    #             FindPackageShare('turret_aim_control'),
-    #             'config',
-    #             'default',
-    #             'turret.yaml',
-    #         ]),
-    #         description="the file path to the 'turret config' YAML file.",
-    #     )
-    # )
-
     return LaunchDescription(declared_arguments + [OpaqueFunction(function=launch_setup)])
