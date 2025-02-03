@@ -3,10 +3,7 @@ BAG_NAME="panther_recording_$(date +%Y%m%d_%H%M%S)"
 echo "Recording bag file..."
 echo "Outputting bag to $HOME/$BAG_NAME"
 ros2 bag record -o $HOME/$BAG_NAME \
-    /oak/rgb/image_raw/compressed \
-    /oak/rgb/camera_info \
-    /oak/imu/data \
-    /ouster/imu \
-    /panther/odometry/filtered \
-    /panther/odometry/wheels \
-    /panther/imu/data
+    /camera/color/image_raw \
+    /camera/color/camera_info \
+    /imu/data \
+    /odometry/filtered \
