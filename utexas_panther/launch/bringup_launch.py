@@ -13,6 +13,7 @@
 # limitations under the License.
 
 
+import os
 from launch import LaunchDescription
 from launch.actions import (
     DeclareLaunchArgument,
@@ -52,6 +53,9 @@ def generate_launch_description():
     use_composition = LaunchConfiguration("use_composition")
     use_respawn = LaunchConfiguration("use_respawn")
     use_sim_time = LaunchConfiguration("use_sim_time")
+    use_rviz = LaunchConfiguration("use_rviz")
+    rviz_config_file_mapping = LaunchConfiguration('rviz_config_file_mapping')
+    rviz_config_file_localization = LaunchConfiguration('rviz_config_file_localization')
 
     declare_autostart_arg = DeclareLaunchArgument(
         "autostart",
@@ -115,6 +119,23 @@ def generate_launch_description():
         default_value="false",
         description="Use simulation (Gazebo) clock if true.",
     )
+    declare_use_rviz_arg = DeclareLaunchArgument(
+        "use_rviz",
+        default_value="true",
+        description="Whether to start RViz2.",
+        choices=["true", "false"],
+    )
+    declare_rviz_config_file_mapping_cmd = DeclareLaunchArgument(
+        'rviz_config_file_mapping',
+        default_value=os.path.join(
+            utexas_panther, 'config', 'rosbot_pro_localization.rviz'),
+        description='Full path to the RVIZ config file to use')
+
+    declare_rviz_config_file_localization_cmd = DeclareLaunchArgument(
+        'rviz_config_file_localization',
+        default_value=os.path.join(
+            utexas_panther, 'config', 'rosbot_pro_localization.rviz'),
+        description='Full path to the RVIZ config file to use')
 
     # Create our own temporary YAML files that include substitutions
     param_substitutions = {"use_sim_time": use_sim_time, "yaml_filename": map}
@@ -222,6 +243,31 @@ def generate_launch_description():
                 arguments=["--ros-args", "--log-level", log_level],
                 output="screen",
             ),
+            # Launch rviz2
+            Node(
+                condition=IfCondition(PythonExpression([use_rviz, " and ", slam])),
+                package="rviz2",
+                executable="rviz2",
+                name="rviz_mapping",
+                arguments=[
+                    "-d",
+                    PathJoinSubstitution([rviz_config_file_mapping]),
+                ],
+                parameters=[{"use_sim_time": use_sim_time}],
+                output="screen",
+            ),
+            Node(
+                condition=IfCondition(PythonExpression([use_rviz, " and not ", slam])),
+                package="rviz2",
+                executable="rviz2",
+                name="rviz_localization",
+                arguments=[
+                    "-d",
+                    PathJoinSubstitution([rviz_config_file_localization]),
+                ],
+                parameters=[{"use_sim_time": use_sim_time}],
+                output="screen",
+            ),
         ]
     )
 
@@ -240,6 +286,9 @@ def generate_launch_description():
             declare_use_composition_arg,
             declare_use_respawn_arg,
             declare_use_sim_time_arg,
+            declare_use_rviz_arg,
+            declare_rviz_config_file_mapping_cmd,
+            declare_rviz_config_file_localization_cmd,
             bringup_cmd_group,
         ]
     )
