@@ -54,8 +54,7 @@ def generate_launch_description():
     use_respawn = LaunchConfiguration("use_respawn")
     use_sim_time = LaunchConfiguration("use_sim_time")
     use_rviz = LaunchConfiguration("use_rviz")
-    rviz_config_file_mapping = LaunchConfiguration('rviz_config_file_mapping')
-    rviz_config_file_localization = LaunchConfiguration('rviz_config_file_localization')
+    rviz_config_file = LaunchConfiguration("rviz_config_file")
 
     declare_autostart_arg = DeclareLaunchArgument(
         "autostart",
@@ -89,21 +88,15 @@ def generate_launch_description():
     )
     declare_params_file_arg = DeclareLaunchArgument(
         "params_file",
-        default_value=PathJoinSubstitution(
-            [utexas_panther, "config", "nav2_params.yaml"]
-        ),
+        default_value=PathJoinSubstitution([utexas_panther, "config", "nav2_params.yaml"]),
         description="Path to the parameters file to use for all nav2 related nodes",
     )
     declare_pc2ls_params_file_arg = DeclareLaunchArgument(
         "pc2ls_params_file",
-        default_value=PathJoinSubstitution(
-            [husarion_ugv_navigation, "config", "pc2ls_params.yaml"]
-        ),
+        default_value=PathJoinSubstitution([husarion_ugv_navigation, "config", "pc2ls_params.yaml"]),
         description="Path to the parameters file to use for pointcloud_to_laserscan node.",
     )
-    declare_slam_arg = DeclareLaunchArgument(
-        "slam", default_value="False", description="Whether run a SLAM."
-    )
+    declare_slam_arg = DeclareLaunchArgument("slam", default_value="False", description="Whether run a SLAM.")
     declare_use_composition_arg = DeclareLaunchArgument(
         "use_composition",
         default_value="True",
@@ -125,17 +118,11 @@ def generate_launch_description():
         description="Whether to start RViz2.",
         choices=["true", "false"],
     )
-    declare_rviz_config_file_mapping_cmd = DeclareLaunchArgument(
-        'rviz_config_file_mapping',
-        default_value=os.path.join(
-            utexas_panther, 'config', 'rosbot_pro_localization.rviz'),
-        description='Full path to the RVIZ config file to use')
-
-    declare_rviz_config_file_localization_cmd = DeclareLaunchArgument(
-        'rviz_config_file_localization',
-        default_value=os.path.join(
-            utexas_panther, 'config', 'rosbot_pro_localization.rviz'),
-        description='Full path to the RVIZ config file to use')
+    declare_rviz_config_file_cmd = DeclareLaunchArgument(
+        "rviz_config_file",
+        default_value=os.path.join(utexas_panther, "config", "panther_sim.rviz"),
+        description="Full path to the RVIZ config file to use",
+    )
 
     # Create our own temporary YAML files that include substitutions
     param_substitutions = {"use_sim_time": use_sim_time, "yaml_filename": map}
@@ -144,7 +131,9 @@ def generate_launch_description():
     scan_topic = PythonExpression(
         ["'scan' if '", observation_topic_type, "' == 'pointcloud' else '", observation_topic, "'"]
     )
-    add_obstacle_layer = PythonExpression(["'obstacle_layer,' if '", observation_topic_type, "' == 'laserscan' else ''"])
+    add_obstacle_layer = PythonExpression(
+        ["'obstacle_layer,' if '", observation_topic_type, "' == 'laserscan' else ''"]
+    )
     add_voxel_layer = PythonExpression(["'voxel_layer,' if '", observation_topic_type, "' == 'pointcloud' else ''"])
 
     params_file = ReplaceString(
@@ -172,9 +161,7 @@ def generate_launch_description():
         [
             PushRosNamespace(namespace),
             Node(
-                condition=IfCondition(
-                    PythonExpression(["'", observation_topic_type, "' == 'pointcloud'"])
-                ),
+                condition=IfCondition(PythonExpression(["'", observation_topic_type, "' == 'pointcloud'"])),
                 package="pointcloud_to_laserscan",
                 executable="pointcloud_to_laserscan_node",
                 name="pointcloud_to_laserscan",
@@ -192,9 +179,7 @@ def generate_launch_description():
                 output="screen",
             ),
             IncludeLaunchDescription(
-                PythonLaunchDescriptionSource(
-                    PathJoinSubstitution([launch_dir, "slam_launch.py"])
-                ),
+                PythonLaunchDescriptionSource(PathJoinSubstitution([launch_dir, "slam_launch.py"])),
                 condition=IfCondition(slam),
                 launch_arguments={
                     "autostart": autostart,
@@ -205,9 +190,7 @@ def generate_launch_description():
                 }.items(),
             ),
             IncludeLaunchDescription(
-                PythonLaunchDescriptionSource(
-                    PathJoinSubstitution([launch_dir, "localization_launch.py"])
-                ),
+                PythonLaunchDescriptionSource(PathJoinSubstitution([launch_dir, "localization_launch.py"])),
                 condition=UnlessCondition(slam),
                 launch_arguments={
                     "autostart": autostart,
@@ -221,9 +204,7 @@ def generate_launch_description():
                 }.items(),
             ),
             IncludeLaunchDescription(
-                PythonLaunchDescriptionSource(
-                    PathJoinSubstitution([launch_dir, "navigation_launch.py"])
-                ),
+                PythonLaunchDescriptionSource(PathJoinSubstitution([launch_dir, "navigation_launch.py"])),
                 launch_arguments={
                     "namespace": namespace,
                     "use_sim_time": use_sim_time,
@@ -245,25 +226,13 @@ def generate_launch_description():
             ),
             # Launch rviz2
             Node(
-                condition=IfCondition(PythonExpression([use_rviz, " and ", slam])),
+                condition=IfCondition(use_rviz),
                 package="rviz2",
                 executable="rviz2",
                 name="rviz_mapping",
                 arguments=[
                     "-d",
-                    PathJoinSubstitution([rviz_config_file_mapping]),
-                ],
-                parameters=[{"use_sim_time": use_sim_time}],
-                output="screen",
-            ),
-            Node(
-                condition=IfCondition(PythonExpression([use_rviz, " and not ", slam])),
-                package="rviz2",
-                executable="rviz2",
-                name="rviz_localization",
-                arguments=[
-                    "-d",
-                    PathJoinSubstitution([rviz_config_file_localization]),
+                    PathJoinSubstitution([rviz_config_file]),
                 ],
                 parameters=[{"use_sim_time": use_sim_time}],
                 output="screen",
@@ -287,8 +256,7 @@ def generate_launch_description():
             declare_use_respawn_arg,
             declare_use_sim_time_arg,
             declare_use_rviz_arg,
-            declare_rviz_config_file_mapping_cmd,
-            declare_rviz_config_file_localization_cmd,
+            declare_rviz_config_file_cmd,
             bringup_cmd_group,
         ]
     )
