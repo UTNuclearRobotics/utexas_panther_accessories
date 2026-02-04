@@ -28,6 +28,7 @@ from launch.substitutions import (
     LaunchConfiguration,
     PathJoinSubstitution,
     PythonExpression,
+    TextSubstitution,
 )
 from launch_ros.actions import Node, PushRosNamespace
 from launch_ros.descriptions import ParameterFile
@@ -120,7 +121,7 @@ def generate_launch_description():
     )
     declare_rviz_config_file_cmd = DeclareLaunchArgument(
         "rviz_config_file",
-        default_value=os.path.join(utexas_panther, "config", "panther_sim.rviz"),
+        default_value=PathJoinSubstitution([utexas_panther, "config", "panther_sim.rviz"]),
         description="Full path to the RVIZ config file to use",
     )
 
