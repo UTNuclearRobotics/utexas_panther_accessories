@@ -15,11 +15,16 @@ def launch_setup(context, *args, **kwargs):
     # ros2 launch ouster_ros sensor.launch.xml sensor_hostname:=192.168.1.100 viz:=false
     lidar_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
-            [PathJoinSubstitution([FindPackageShare("ouster_ros"), "launch", "sensor.launch.xml"])]
+            [PathJoinSubstitution([FindPackageShare("ouster_ros"), "launch", "sensor.composite.launch.py"])]
         ),
         launch_arguments={
-            "sensor_hostname": "192.168.1.100",
+            "params_file": PathJoinSubstitution([
+                FindPackageShare("utexas_panther"),
+                "config",
+                "ouster_params.yaml"
+            ]),
             "viz": "false",
+            "ouster_ns": "panther"
         }.items(),
     )
 
