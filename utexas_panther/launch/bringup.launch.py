@@ -94,7 +94,7 @@ def generate_launch_description():
     )
     declare_pc2ls_params_file_arg = DeclareLaunchArgument(
         "pc2ls_params_file",
-        default_value=PathJoinSubstitution([husarion_ugv_navigation, "config", "pc2ls_params.yaml"]),
+        default_value=PathJoinSubstitution([utexas_panther, "config", "nav2_params.yaml"]),
         description="Path to the parameters file to use for pointcloud_to_laserscan node.",
     )
     declare_slam_arg = DeclareLaunchArgument("slam", default_value="False", description="Whether run a SLAM.")
@@ -166,7 +166,7 @@ def generate_launch_description():
                 package="pointcloud_to_laserscan",
                 executable="pointcloud_to_laserscan_node",
                 name="pointcloud_to_laserscan",
-                parameters=[pc2ls_params_file],
+                parameters=[configured_params],
                 remappings=[("cloud_in", observation_topic)],
                 output="screen",
             ),
