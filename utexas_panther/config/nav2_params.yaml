@@ -472,6 +472,10 @@ slam_toolbox:
     stack_size_to_use: 40000000 #// program needs a larger stack size to serialize large maps
     enable_interactive_mode: false
 
+    # Map parameters
+    map_file_name: ""  # Don't load existing map
+    map_start_at_dock: true
+
     # General Parameters
     use_scan_matching: true
     use_scan_barycenter: true
@@ -508,5 +512,7 @@ slam_toolbox:
     minimum_angle_penalty: 0.9
     minimum_distance_penalty: 0.5
     use_response_expansion: true
+
+    map_start_at_dock: true
 
     use_sim_time: false
