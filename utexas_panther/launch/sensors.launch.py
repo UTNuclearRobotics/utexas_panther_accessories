@@ -41,8 +41,20 @@ def launch_setup(context, *args, **kwargs):
         name='estop_topic_relay',
         output='screen',
         arguments=[
-            '/panther/hardware/estop',
-            '/hardware/estop'
+            '/panther/hardware/e_stop',
+            '/hardware/e_stop'
+        ],
+        parameters=[{'use_sim_time': False}],
+    )
+
+    cmd_relay = Node(
+        package='topic_tools',
+        executable='relay',
+        name='cmd_vel_nav_topic_relay',
+        output='screen',
+        arguments=[
+            '/cmd_vel_nav',
+            '/panther/controller/cmd_vel'
         ],
         parameters=[{'use_sim_time': False}],
     )
@@ -51,6 +63,7 @@ def launch_setup(context, *args, **kwargs):
         depthai_camera,
         ouster_lidar,
         estop_relay,
+        cmd_relay,
     ]
 
 
