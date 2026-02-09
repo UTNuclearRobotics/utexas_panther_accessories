@@ -94,7 +94,7 @@ def generate_launch_description():
     )
     declare_pc2ls_params_file_arg = DeclareLaunchArgument(
         "pc2ls_params_file",
-        default_value=PathJoinSubstitution([utexas_panther, "config", "nav2_params.yaml"]),
+        default_value=PathJoinSubstitution([utexas_panther, "config", "pc2ls_params.yaml"]),
         description="Path to the parameters file to use for pointcloud_to_laserscan node.",
     )
     declare_slam_arg = DeclareLaunchArgument("slam", default_value="False", description="Whether run a SLAM.")
