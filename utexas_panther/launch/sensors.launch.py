@@ -2,12 +2,17 @@ from launch import LaunchDescription
 from launch.actions import (
     IncludeLaunchDescription,
     OpaqueFunction,
+    RegisterEventHandler
 )
+from launch.event_handlers import OnProcessStart
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import (
     PathJoinSubstitution,
+    Command,
+    TextSubstitution,
 )
 from launch_ros.substitutions import FindPackageShare
+from launch_ros.actions import Node
 
 
 def launch_setup(context, *args, **kwargs):
@@ -29,9 +34,23 @@ def launch_setup(context, *args, **kwargs):
         }.items(),
     )
 
+    # Relay node: copies /panther/hardware/estop → /hardware/estop
+    estop_relay = Node(
+        package='topic_tools',
+        executable='relay',
+        name='estop_topic_relay',
+        output='screen',
+        arguments=[
+            '/panther/hardware/estop',
+            '/hardware/estop'
+        ],
+        parameters=[{'use_sim_time': False}],
+    )
+
     return [
         depthai_camera,
         ouster_lidar,
+        estop_relay,
     ]
 
 
