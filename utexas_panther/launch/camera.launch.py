@@ -43,6 +43,7 @@ def launch_setup(context, *args, **kwargs):
 
     return [
         depthai_camera,
+        static_transform_publisher
     ]
 
 
