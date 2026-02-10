@@ -28,7 +28,7 @@ def launch_setup(context, *args, **kwargs):
     static_transform_publisher = Node(
         package="tf2_ros",
         executable="static_transform_publisher",
-        name="static_transform_publisher",
+        name="static_transform_publisher_camera",
         arguments=[
             "0.2886",
             "0.0",
@@ -36,8 +36,8 @@ def launch_setup(context, *args, **kwargs):
             "0.0",
             "0.0",
             "0.0",
-            "/panther/base_link",
-            "/oak-d-base-frame",
+            "panther/base_link",
+            "oak-d-base-frame",
         ],
     )
 

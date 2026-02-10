@@ -31,8 +31,8 @@ def launch_setup(context, *args, **kwargs):
     static_transform_publisher = Node(
         package="tf2_ros",
         executable="static_transform_publisher",
-        name="static_transform_publisher",
-        arguments=["0.0", "0.0", "0.589", "0.0", "0.0", "0.0", "/panther/base_link", "/os_sensor"],
+        name="static_transform_publisher_lidar",
+        arguments=["0.0", "0.0", "0.589", "0.0", "0.0", "0.0", "panther/base_link", "os_sensor"],
     )
 
     return [
