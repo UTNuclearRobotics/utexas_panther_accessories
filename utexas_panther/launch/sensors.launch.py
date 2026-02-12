@@ -35,17 +35,17 @@ def launch_setup(context, *args, **kwargs):
     )
 
     # Relay node: copies /panther/hardware/estop → /hardware/estop
-    # estop_relay = Node(
-    #     package='topic_tools',
-    #     executable='relay',
-    #     name='estop_topic_relay',
-    #     output='screen',
-    #     arguments=[
-    #         '/panther/hardware/e_stop',
-    #         '/hardware/e_stop'
-    #     ],
-    #     parameters=[{'use_sim_time': False}],
-    # )
+    goal_relay = Node(
+        package='topic_tools',
+        executable='relay',
+        name='goal_topic_relay',
+        output='screen',
+        arguments=[
+            '/goal_pose',
+            '/panther/goal_pose'
+        ],
+        parameters=[{'use_sim_time': False}],
+    )
 
     # cmd_relay = Node(
     #     package='topic_tools',
@@ -62,7 +62,7 @@ def launch_setup(context, *args, **kwargs):
     return [
         depthai_camera,
         ouster_lidar,
-        # estop_relay,
+        goal_relay,
         # cmd_relay,
     ]
 
