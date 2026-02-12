@@ -4,8 +4,8 @@ bt_navigator:
   ros__parameters:
     use_sim_time: false
     global_frame: map
-    robot_base_frame: panther/base_link
-    odom_topic: panther/odometry/filtered
+    robot_base_frame: <namespace>/base_link
+    odom_topic: <namespace>/odometry/filtered
     plugin_lib_names:
       - is_estop
       - nav2_compute_path_to_pose_action_bt_node
@@ -46,7 +46,7 @@ controller_server:
     use_sim_time: false
 
     controller_frequency: 10.0
-    odom_topic: /panther/odometry/filtered
+    odom_topic: /<namespace>/odometry/filtered
     costmap_update_timeout: 0.5
 
     min_x_velocity_threshold: 0.01
@@ -155,8 +155,8 @@ local_costmap:
     ros__parameters:
       use_sim_time: false
 
-      global_frame: panther/odom
-      robot_base_frame: panther/base_link
+      global_frame: <namespace>/odom
+      robot_base_frame: <namespace>/base_link
       transform_tolerance: 0.1
 
       update_frequency: 5.0
@@ -219,7 +219,7 @@ global_costmap:
       use_sim_time: false
 
       global_frame: map
-      robot_base_frame: panther/base_link
+      robot_base_frame: <namespace>/base_link
       transform_tolerance: 0.1
 
       update_frequency: 1.0
@@ -311,8 +311,8 @@ recoveries_server:
   ros__parameters:
     use_sim_time: false
 
-    global_frame: panther/odom
-    robot_base_frame: panther/base_link
+    global_frame: <namespace>/odom
+    robot_base_frame: <namespace>/base_link
     transform_tolerance: 0.1
 
     costmap_topic: /<namespace>/local_costmap/costmap_raw
@@ -359,7 +359,7 @@ velocity_smoother:
     min_velocity: [-0.5, 0.0, -1.0]
     max_accel: [1.5, 0.0, 2.0]
     max_decel: [-1.5, 0.0, -2.0]
-    odom_topic: panther/odometry/filtered
+    odom_topic: <namespace>/odometry/filtered
     odom_duration: 0.1
     deadband_velocity: [0.0, 0.0, 0.0]
     velocity_timeout: 1.0
@@ -371,8 +371,8 @@ amcl:
     use_sim_time: false
 
     global_frame_id: map
-    odom_frame_id: panther/odom
-    base_frame_id: panther/base_link
+    odom_frame_id: <namespace>/odom
+    base_frame_id: <namespace>/base_link
 
     scan_topic: /ouster/scan
 
@@ -459,9 +459,9 @@ slam_toolbox:
     ceres_loss_function: None #HuberLoss
 
     # ROS Parameters
-    odom_frame: panther/odom
+    odom_frame: <namespace>/odom
     map_frame: map
-    base_frame: panther/base_link
+    base_frame: <namespace>/base_link
     scan_topic: /ouster/scan
     mode: mapping #localization
 

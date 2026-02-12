@@ -128,6 +128,7 @@ def generate_launch_description():
     # Create our own temporary YAML files that include substitutions
     param_substitutions = {"use_sim_time": use_sim_time, "yaml_filename": map}
 
+    namespace_or_default = PythonExpression(["'", namespace, "' if '", namespace, "' else 'robot'"])
     namespace_ext = PythonExpression(["'", namespace, "' + '/' if '", namespace, "' else ''"])
     scan_topic = PythonExpression(
         ["'scan' if '", observation_topic_type, "' == 'pointcloud' else '", observation_topic, "'"]
@@ -140,6 +141,7 @@ def generate_launch_description():
     params_file = ReplaceString(
         source_file=params_file,
         replacements={
+            "<namespace_key>": namespace_or_default,
             "<namespace>/": namespace_ext,
             "<observation_topic>": observation_topic,
             "<scan_topic>": scan_topic,
@@ -151,7 +153,7 @@ def generate_launch_description():
     configured_params = ParameterFile(
         RewrittenYaml(
             source_file=params_file,
-            root_key=namespace,
+            root_key="",
             param_rewrites=param_substitutions,
             convert_types=True,
         ),
