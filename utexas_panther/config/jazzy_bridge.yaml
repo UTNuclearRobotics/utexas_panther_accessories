@@ -1,121 +1,127 @@
-domain_bridge:
-  from_domain: 0  # ROS2 Humble (host) → ROS2 Jazzy (container)
-  to_domain: 1
+name: humble_to_jazzy_bridge
+from_domain: 0
+to_domain: 1
 
-  topics:
+topics:
 
-    # ── TF (bidirectional: both sides publish transforms) ─────────────────────
-    /tf:
-      type: tf2_msgs/msg/TFMessage
-      reverse: true
+  # ── TF (Humble → Jazzy) ───────────────────────────────────────────────────
+  tf:
+    type: tf2_msgs/msg/TFMessage
+  tf_static:
+    type: tf2_msgs/msg/TFMessage
 
-    /tf_static:
-      type: tf2_msgs/msg/TFMessage
-      reverse: true
+  # ── TF (Jazzy → Humble) ───────────────────────────────────────────────────
+  tf:
+    type: tf2_msgs/msg/TFMessage
+    from_domain: 1
+    to_domain: 0
+  tf_static:
+    type: tf2_msgs/msg/TFMessage
+    from_domain: 1
+    to_domain: 0
 
-    # ── Odometry (Humble → Jazzy for Nav2/SLAM) ───────────────────────────────
-    /panther/odometry/filtered:
-      type: nav_msgs/msg/Odometry
+  # ── Odometry (Humble → Jazzy) ─────────────────────────────────────────────
+  panther/odometry/filtered:
+    type: nav_msgs/msg/Odometry
+  panther/odometry/wheels:
+    type: nav_msgs/msg/Odometry
 
-    /panther/odometry/wheels:
-      type: nav_msgs/msg/Odometry
+  # ── IMU (Humble → Jazzy) ──────────────────────────────────────────────────
+  panther/imu/data:
+    type: sensor_msgs/msg/Imu
 
-    # ── IMU (Humble → Jazzy) ──────────────────────────────────────────────────
-    /panther/imu/data:
-      type: sensor_msgs/msg/Imu
+  # ── Joint states (Humble → Jazzy) ─────────────────────────────────────────
+  panther/joint_states:
+    type: sensor_msgs/msg/JointState
+  panther/dynamic_joint_states:
+    type: control_msgs/msg/DynamicJointState
 
-    # ── Joint states (bidirectional: both sides publish) ──────────────────────
-    /panther/joint_states:
-      type: sensor_msgs/msg/JointState
-      reverse: true
+  # ── Joint states (Jazzy → Humble) ─────────────────────────────────────────
+  panther/joint_states:
+    type: sensor_msgs/msg/JointState
+    from_domain: 1
+    to_domain: 0
 
-    /panther/dynamic_joint_states:
-      type: control_msgs/msg/DynamicJointState
+  # ── Robot description (Humble → Jazzy) ───────────────────────────────────
+  panther/robot_description:
+    type: std_msgs/msg/String
 
-    # ── Robot description (Humble → Jazzy so Nav2 has the URDF) ──────────────
-    /panther/robot_description:
-      type: std_msgs/msg/String
+  # ── Velocity commands (Jazzy → Humble) ───────────────────────────────────
+  panther/cmd_vel_nav:
+    type: geometry_msgs/msg/Twist
+    from_domain: 1
+    to_domain: 0
+  panther/cmd_vel:
+    type: geometry_msgs/msg/Twist
+    from_domain: 1
+    to_domain: 0
+  panther/controller/cmd_vel:
+    type: geometry_msgs/msg/Twist
+    from_domain: 1
+    to_domain: 0
+  panther/hololens/cmd_vel:
+    type: geometry_msgs/msg/Twist
+    from_domain: 1
+    to_domain: 0
+  panther/keyboard/cmd_vel:
+    type: geometry_msgs/msg/Twist
+    from_domain: 1
+    to_domain: 0
 
-    # ── Velocity commands (Jazzy Nav2 → Humble controller only) ──────────────
-    /panther/cmd_vel_nav:
-      type: geometry_msgs/msg/Twist
-      reverse: true
+  # ── Navigation poses (Humble → Jazzy) ────────────────────────────────────
+  goal_pose:
+    type: geometry_msgs/msg/PoseStamped
+  panther/goal_pose:
+    type: geometry_msgs/msg/PoseStamped
+  clicked_point:
+    type: geometry_msgs/msg/PointStamped
+  panther/localization/set_pose:
+    type: geometry_msgs/msg/PoseWithCovarianceStamped
 
-    /panther/cmd_vel:
-      type: geometry_msgs/msg/Twist
-      reverse: true
+  # ── Initial pose (bidirectional) ──────────────────────────────────────────
+  initialpose:
+    type: geometry_msgs/msg/PoseWithCovarianceStamped
+  initialpose:
+    type: geometry_msgs/msg/PoseWithCovarianceStamped
+    from_domain: 1
+    to_domain: 0
 
-    /panther/controller/cmd_vel:
-      type: geometry_msgs/msg/Twist
-      reverse: true
+  # ── E-stop (bidirectional) ────────────────────────────────────────────────
+  panther/hardware/e_stop:
+    type: std_msgs/msg/Bool
+  panther/hardware/e_stop:
+    type: std_msgs/msg/Bool
+    from_domain: 1
+    to_domain: 0
 
-    # ── Velocity override inputs (Jazzy → Humble) ─────────────────────────────
-    /panther/hololens/cmd_vel:
-      type: geometry_msgs/msg/Twist
-      reverse: true
+  # ── Battery (Humble → Jazzy) ──────────────────────────────────────────────
+  panther/battery/battery_status:
+    type: sensor_msgs/msg/BatteryState
 
-    /panther/keyboard/cmd_vel:
-      type: geometry_msgs/msg/Twist
-      reverse: true
+  # ── Diagnostics (Humble → Jazzy) ─────────────────────────────────────────
+  diagnostics:
+    type: diagnostic_msgs/msg/DiagnosticArray
+  panther/diagnostics:
+    type: diagnostic_msgs/msg/DiagnosticArray
 
-    # ── Navigation poses (Humble → Jazzy only; Nav2 is in Jazzy) ─────────────
-    /goal_pose:
-      type: geometry_msgs/msg/PoseStamped
+  # ── Joystick (Humble → Jazzy) ─────────────────────────────────────────────
+  panther/joy:
+    type: sensor_msgs/msg/Joy
 
-    /panther/goal_pose:
-      type: geometry_msgs/msg/PoseStamped
+  # ── Lights (Humble → Jazzy) ───────────────────────────────────────────────
+  panther/lights/channel_1_frame:
+    type: sensor_msgs/msg/Image
+  panther/lights/channel_2_frame:
+    type: sensor_msgs/msg/Image
 
-    /clicked_point:
-      type: geometry_msgs/msg/PointStamped
+  # ── Speed limit (Jazzy → Humble) ─────────────────────────────────────────
+  panther/speed_limit:
+    type: nav2_msgs/msg/SpeedLimit
+    from_domain: 1
+    to_domain: 0
 
-    /panther/localization/set_pose:
-      type: geometry_msgs/msg/PoseWithCovarianceStamped
-
-    # Bidirectional: host-side RViz (Humble) may also publish initial pose
-    /initialpose:
-      type: geometry_msgs/msg/PoseWithCovarianceStamped
-      reverse: true
-
-    # ── Hardware / safety (Humble → Jazzy so Nav2 can react) ─────────────────
-    /panther/hardware/e_stop:
-      type: std_msgs/msg/Bool
-      reverse: true   # Jazzy behavior trees may also trigger e-stop
-
-    /panther/hardware/io_state:
-      type: panther_msgs/msg/IOState
-
-    /panther/hardware/motor_controllers_state:
-      type: panther_msgs/msg/DriverState
-
-    # ── Battery (Humble → Jazzy for monitoring/behavior trees) ───────────────
-    /panther/battery/battery_status:
-      type: sensor_msgs/msg/BatteryState
-
-    /panther/battery/charging_status:
-      type: panther_msgs/msg/ChargingStatus
-
-    /panther/system_status:
-      type: panther_msgs/msg/SystemStatus
-
-    # ── Diagnostics (Humble → Jazzy) ──────────────────────────────────────────
-    /diagnostics:
-      type: diagnostic_msgs/msg/DiagnosticArray
-
-    /panther/diagnostics:
-      type: diagnostic_msgs/msg/DiagnosticArray
-
-    # ── Joystick (Humble → Jazzy so behavior trees / teleop nodes can use it) ─
-    /panther/joy:
-      type: sensor_msgs/msg/Joy
-
-    # ── Lights (Humble → Jazzy) ───────────────────────────────────────────────
-    /panther/lights/channel_1_frame:
-      type: sensor_msgs/msg/Image
-
-    /panther/lights/channel_2_frame:
-      type: sensor_msgs/msg/Image
-
-    # ── Speed limit (Jazzy Nav2 → Humble) ────────────────────────────────────
-    /panther/speed_limit:
-      type: nav2_msgs/msg/SpeedLimit
-      reverse: true
+  # ── REMOVED (require panther_msgs not available in Humble): ───────────────
+  #   panther/hardware/io_state        panther_msgs/msg/IOState
+  #   panther/hardware/motor_controllers_state  panther_msgs/msg/DriverState
+  #   panther/battery/charging_status  panther_msgs/msg/ChargingStatus
+  #   panther/system_status            panther_msgs/msg/SystemStatus
