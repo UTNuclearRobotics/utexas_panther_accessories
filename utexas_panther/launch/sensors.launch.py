@@ -47,6 +47,18 @@ def launch_setup(context, *args, **kwargs):
         parameters=[{'use_sim_time': False}],
     )
 
+    domain_bridge = Node(
+        package='domain_bridge',
+        executable='domain_bridge',
+        name='domain_bridge',
+        output='screen',
+        arguments=[
+            PathJoinSubstitution([
+                FindPackageShare("utexas_panther"), "config", "domain_bridge.yaml"
+            ])
+        ],
+    )
+
     # cmd_relay = Node(
     #     package='topic_tools',
     #     executable='relay',
@@ -63,6 +75,7 @@ def launch_setup(context, *args, **kwargs):
         depthai_camera,
         ouster_lidar,
         goal_relay,
+        domain_bridge,
         # cmd_relay,
     ]
 

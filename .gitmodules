@@ -5,4 +5,4 @@
 [submodule "camera/depthai-ros"]
 	path = camera/depthai-ros
 	url = git@github.com:luxonis/depthai-ros.git
-	branch = humble
+	branch = v3-jazzy
