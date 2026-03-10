@@ -47,17 +47,21 @@ def launch_setup(context, *args, **kwargs):
         parameters=[{'use_sim_time': False}],
     )
 
-    domain_bridge = Node(
-        package='domain_bridge',
-        executable='domain_bridge',
-        name='domain_bridge',
+    twist_stamper = Node(
+        package='twist_stamper',
+        executable='twist_stamper',
+        name='twist_stamper',
         output='screen',
-        arguments=[
-            PathJoinSubstitution([
-                FindPackageShare("utexas_panther"), "config", "domain_bridge.yaml"
-            ])
+        remappings=[
+            ('cmd_vel_in', '/panther/controller/cmd_vel'),
+            ('cmd_vel_out', '/cmd_vel_out'),
         ],
+        parameters=[{
+            'frame_id': 'panther/base_link',
+            'use_sim_time': False,
+        }],
     )
+
 
     # cmd_relay = Node(
     #     package='topic_tools',
@@ -75,7 +79,7 @@ def launch_setup(context, *args, **kwargs):
         depthai_camera,
         ouster_lidar,
         goal_relay,
-        domain_bridge,
+        twist_stamper,
         # cmd_relay,
     ]
 

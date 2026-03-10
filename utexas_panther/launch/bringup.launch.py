@@ -20,6 +20,7 @@ from launch.actions import (
     GroupAction,
     IncludeLaunchDescription,
     SetEnvironmentVariable,
+    TimerAction,
 )
 from launch.conditions import IfCondition, UnlessCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
@@ -243,6 +244,23 @@ def generate_launch_description():
         ]
     )
 
+    domain_bridge_delayed = TimerAction(
+        period=5.0,
+        actions=[
+            Node(
+                package='domain_bridge',
+                executable='domain_bridge',
+                name='domain_bridge',
+                output='screen',
+                arguments=[
+                    PathJoinSubstitution([
+                        FindPackageShare("utexas_panther"), "config", "domain_bridge.yaml"
+                    ])
+                ],
+            )
+        ],
+    )
+
     return LaunchDescription(
         [
             SetEnvironmentVariable("RCUTILS_LOGGING_BUFFERED_STREAM", "1"),
@@ -261,5 +279,6 @@ def generate_launch_description():
             declare_use_rviz_arg,
             declare_rviz_config_file_cmd,
             bringup_cmd_group,
+            domain_bridge_delayed,
         ]
     )
