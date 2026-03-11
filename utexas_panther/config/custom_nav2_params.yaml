@@ -232,7 +232,7 @@
 
         footprint: '[[0.45, 0.47], [0.45, -0.47], [-0.45, -0.47], [-0.45, 0.47]]'
 
-        plugins: [sterling_layer, static_layer, <obstacle_layer>, <voxel_layer>, inflation_layer]
+        plugins: [static_layer, sterling_layer, <obstacle_layer>, <voxel_layer>, inflation_layer]
         sterling_layer:
           plugin: "nav2_costmap_2d::StaticLayer"
           enabled: True
