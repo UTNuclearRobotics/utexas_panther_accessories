@@ -47,6 +47,33 @@ def launch_setup(context, *args, **kwargs):
         parameters=[{'use_sim_time': False}],
     )
 
+    initial_pose_relay = Node(
+        package='topic_tools',
+        executable='relay',
+        name='initial_pose_relay',
+        output='screen',
+        arguments=[
+            '/initialpose',
+            '/panther/initialpose'
+        ],
+        parameters=[{'use_sim_time': False}],
+    )
+
+    twist_stamper = Node(
+        package='twist_stamper',
+        executable='twist_stamper',
+        name='twist_stamper',
+        output='screen',
+        remappings=[
+            ('cmd_vel_in', '/panther/controller/cmd_vel'),
+            ('cmd_vel_out', '/cmd_vel_out'),
+        ],
+        parameters=[{
+            'frame_id': 'panther/base_link',
+            'use_sim_time': False,
+        }],
+    )
+
     # cmd_relay = Node(
     #     package='topic_tools',
     #     executable='relay',
@@ -63,6 +90,8 @@ def launch_setup(context, *args, **kwargs):
         depthai_camera,
         ouster_lidar,
         goal_relay,
+        twist_stamper,
+        initial_pose_relay,
         # cmd_relay,
     ]
 
