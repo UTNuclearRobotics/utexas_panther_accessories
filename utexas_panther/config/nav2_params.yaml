@@ -365,7 +365,7 @@
     ros__parameters:
       use_sim_time: false
 
-      global_frame_id: map
+      global_frame_id: <namespace>/map
       odom_frame_id: <namespace>/odom
       base_frame_id: <namespace>/base_link
 
