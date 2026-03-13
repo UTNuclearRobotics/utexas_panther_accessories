@@ -97,7 +97,9 @@ def generate_launch_description():
         default_value=PathJoinSubstitution([utexas_panther, "config", "pc2ls_params.yaml"]),
         description="Path to the parameters file to use for pointcloud_to_laserscan node.",
     )
-    declare_slam_arg = DeclareLaunchArgument("slam", default_value="False", description="Whether run a SLAM.")
+    declare_slam_arg = DeclareLaunchArgument(
+        "slam", default_value="False", description="Whether run a SLAM."
+    )
     declare_use_composition_arg = DeclareLaunchArgument(
         "use_composition",
         default_value="True",
@@ -125,25 +127,39 @@ def generate_launch_description():
         description="Full path to the RVIZ config file to use",
     )
 
-    # Create our own temporary YAML files that include substitutions
+    # --------------------------------------------------------------------------
+    # Substitution helpers
+    # --------------------------------------------------------------------------
     param_substitutions = {"use_sim_time": use_sim_time, "yaml_filename": map}
 
     namespace_or_default = PythonExpression(["'", namespace, "' if '", namespace, "' else 'robot'"])
     namespace_ext = PythonExpression(["'", namespace, "' + '/' if '", namespace, "' else ''"])
+
     scan_topic = PythonExpression(
         ["'scan' if '", observation_topic_type, "' == 'pointcloud' else '", observation_topic, "'"]
     )
     add_obstacle_layer = PythonExpression(
         ["'obstacle_layer,' if '", observation_topic_type, "' == 'laserscan' else ''"]
     )
-    add_voxel_layer = PythonExpression(["'voxel_layer,' if '", observation_topic_type, "' == 'pointcloud' else ''"])
+    add_voxel_layer = PythonExpression(
+        ["'voxel_layer,' if '", observation_topic_type, "' == 'pointcloud' else ''"]
+    )
 
+    # The crop box node publishes <observation_topic>_filtered.
+    # pointcloud_to_laserscan and the costmap voxel/obstacle layers consume this.
+    observation_topic_filtered = PythonExpression(["'", observation_topic, "' + '_filtered'"])
+
+    # --------------------------------------------------------------------------
+    # nav2_params.yaml — substitute all template tokens.
+    # <observation_topic> is replaced with the filtered topic so that costmap
+    # layers receive the robot-body-cropped cloud, not the raw Ouster stream.
+    # --------------------------------------------------------------------------
     params_file = ReplaceString(
         source_file=params_file,
         replacements={
             "<namespace_key>": namespace_or_default,
             "<namespace>/": namespace_ext,
-            "<observation_topic>": observation_topic,
+            "<observation_topic>": observation_topic_filtered,
             "<scan_topic>": scan_topic,
             "<obstacle_layer>,": add_obstacle_layer,
             "<voxel_layer>,": add_voxel_layer,
@@ -160,18 +176,65 @@ def generate_launch_description():
         allow_substs=True,
     )
 
+    # --------------------------------------------------------------------------
+    # pc2ls_params.yaml — substitute <namespace> token and use_sim_time.
+    # This file is passed only to pointcloud_to_laserscan so its target_frame
+    # resolves correctly without polluting the nav2 parameter namespace.
+    # --------------------------------------------------------------------------
+    pc2ls_params_file = ReplaceString(
+        source_file=pc2ls_params_file,
+        replacements={
+            "<namespace>": namespace,
+        },
+    )
+
+    configured_pc2ls_params = ParameterFile(
+        RewrittenYaml(
+            source_file=pc2ls_params_file,
+            root_key="",
+            param_rewrites={"use_sim_time": use_sim_time},
+            convert_types=True,
+        ),
+        allow_substs=True,
+    )
+
+    # --------------------------------------------------------------------------
+    # Node group
+    # --------------------------------------------------------------------------
     bringup_cmd_group = GroupAction(
         [
             PushRosNamespace(namespace),
+
+            # 1. Strip robot-body returns from the raw pointcloud.
+            # Subscribes to:  <observation_topic>          (raw Ouster cloud)
+            # Publishes to:   <observation_topic>_filtered (crop box output)
             Node(
-                condition=IfCondition(PythonExpression(["'", observation_topic_type, "' == 'pointcloud'"])),
-                package="pointcloud_to_laserscan",
-                executable="pointcloud_to_laserscan_node",
-                name="pointcloud_to_laserscan",
+                condition=IfCondition(
+                    PythonExpression(["'", observation_topic_type, "' == 'pointcloud'"])
+                ),
+                package="pointcloud_crop_box",
+                executable="pointcloud_crop_box_node",
+                name="pointcloud_crop_box",
                 parameters=[configured_params],
                 remappings=[("cloud_in", observation_topic)],
                 output="screen",
             ),
+
+            # 2. Convert the filtered cloud to a LaserScan for SLAM / AMCL.
+            # Subscribes to:  <observation_topic>_filtered
+            # Publishes to:   scan  (consumed by slam_toolbox / amcl via scan_topic)
+            Node(
+                condition=IfCondition(
+                    PythonExpression(["'", observation_topic_type, "' == 'pointcloud'"])
+                ),
+                package="pointcloud_to_laserscan",
+                executable="pointcloud_to_laserscan_node",
+                name="pointcloud_to_laserscan",
+                parameters=[configured_pc2ls_params],
+                remappings=[("cloud_in", observation_topic_filtered)],
+                output="screen",
+            ),
+
             Node(
                 condition=IfCondition(use_composition),
                 name="nav2_container",
@@ -182,7 +245,9 @@ def generate_launch_description():
                 output="screen",
             ),
             IncludeLaunchDescription(
-                PythonLaunchDescriptionSource(PathJoinSubstitution([launch_dir, "slam_launch.py"])),
+                PythonLaunchDescriptionSource(
+                    PathJoinSubstitution([launch_dir, "slam_launch.py"])
+                ),
                 condition=IfCondition(slam),
                 launch_arguments={
                     "autostart": autostart,
@@ -193,7 +258,9 @@ def generate_launch_description():
                 }.items(),
             ),
             IncludeLaunchDescription(
-                PythonLaunchDescriptionSource(PathJoinSubstitution([launch_dir, "localization_launch.py"])),
+                PythonLaunchDescriptionSource(
+                    PathJoinSubstitution([launch_dir, "localization_launch.py"])
+                ),
                 condition=UnlessCondition(slam),
                 launch_arguments={
                     "autostart": autostart,
@@ -207,7 +274,9 @@ def generate_launch_description():
                 }.items(),
             ),
             IncludeLaunchDescription(
-                PythonLaunchDescriptionSource(PathJoinSubstitution([launch_dir, "navigation_launch.py"])),
+                PythonLaunchDescriptionSource(
+                    PathJoinSubstitution([launch_dir, "navigation_launch.py"])
+                ),
                 launch_arguments={
                     "namespace": namespace,
                     "use_sim_time": use_sim_time,

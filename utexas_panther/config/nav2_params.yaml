@@ -177,16 +177,16 @@
           footprint_clearing_enabled: true
           observation_sources: scan
           scan:
-            topic: /ouster/scan
+            topic: <scan_topic>
             clearing: true
             marking: true
             data_type: LaserScan
             min_obstacle_height: 0.1
             max_obstacle_height: 0.7
             obstacle_max_range: 20.0
-            obstacle_min_range: 0.7
+            obstacle_min_range: 0.3
             raytrace_max_range: 20.0
-            raytrace_min_range: 0.7
+            raytrace_min_range: 0.3
         voxel_layer:
           plugin: nav2_costmap_2d::VoxelLayer
           footprint_clearing_enabled: true
@@ -198,16 +198,16 @@
           mark_threshold: 0
           observation_sources: point_cloud
           point_cloud:
-            topic: /ouster/points
+            topic: <observation_topic>
             clearing: true
             marking: true
             data_type: PointCloud2
             min_obstacle_height: 0.1
             max_obstacle_height: 0.7
             obstacle_max_range: 20.0
-            obstacle_min_range: 0.7
+            obstacle_min_range: 0.3
             raytrace_max_range: 20.0
-            raytrace_min_range: 0.7
+            raytrace_min_range: 0.3
         inflation_layer:
           plugin: nav2_costmap_2d::InflationLayer
           cost_scaling_factor: 1.3
@@ -244,15 +244,16 @@
           footprint_clearing_enabled: true
           observation_sources: scan
           scan:
+            topic: <scan_topic>
             clearing: true
             marking: true
             data_type: LaserScan
             min_obstacle_height: 0.2
             max_obstacle_height: 0.7
             obstacle_max_range: 20.0
-            obstacle_min_range: 0.7
+            obstacle_min_range: 0.3
             raytrace_max_range: 20.0
-            raytrace_min_range: 0.7
+            raytrace_min_range: 0.3
         static_layer:
           plugin: nav2_costmap_2d::StaticLayer
           map_subscribe_transient_local: true
@@ -268,16 +269,16 @@
           mark_threshold: 0
           observation_sources: point_cloud
           point_cloud:
-            topic: /ouster/points
+            topic: <observation_topic>
             clearing: true
             marking: true
             data_type: PointCloud2
             min_obstacle_height: 0.2
             max_obstacle_height: 0.7
             obstacle_max_range: 20.0
-            obstacle_min_range: 0.7
+            obstacle_min_range: 0.3
             raytrace_max_range: 20.0
-            raytrace_min_range: 0.7
+            raytrace_min_range: 0.3
 
   planner_server:
     ros__parameters:
@@ -369,7 +370,7 @@
       odom_frame_id: <namespace>/odom
       base_frame_id: <namespace>/base_link
 
-      scan_topic: /ouster/scan
+      scan_topic: <scan_topic>
 
       robot_model_type: nav2_amcl::DifferentialMotionModel
 
@@ -433,6 +434,7 @@
     ros__parameters:
       use_sim_time: false
       yaml_filename: map.yaml
+      topic_name: <namespace>/map
       frame_id: <namespace>/map
 
   map_autosaver:
@@ -457,7 +459,7 @@
       odom_frame: <namespace>/odom
       map_frame: <namespace>/map
       base_frame: <namespace>/base_link
-      scan_topic: /ouster/scan
+      scan_topic: <scan_topic>
       mode: mapping #localization
 
       debug_logging: false
@@ -465,7 +467,7 @@
       transform_publish_period: 0.04
       map_update_interval: 1.0
       resolution: 0.05
-      max_laser_range: 12.0 #for rastering images
+      max_laser_range: 50.0 #for rastering images
       minimum_time_interval: 0.05
       transform_timeout: 0.5
       tf_buffer_duration: 20.0
@@ -481,24 +483,24 @@
       use_scan_barycenter: true
       minimum_travel_distance: 0.2
       minimum_travel_heading: 0.1
-      scan_buffer_size: 10
+      scan_buffer_size: 30
       scan_buffer_maximum_scan_distance: 0.5
       link_match_minimum_response_fine: 0.1
-      link_scan_maximum_distance: 0.75
-      loop_search_maximum_distance: 3.0
+      link_scan_maximum_distance: 1.5
+      loop_search_maximum_distance: 50.0
       do_loop_closing: true
       loop_match_minimum_chain_size: 10
       loop_match_maximum_variance_coarse: 3.0
       loop_match_minimum_response_coarse: 0.35
-      loop_match_minimum_response_fine: 0.45
+      loop_match_minimum_response_fine: 0.55
 
       # Correlation Parameters - Correlation Parameters
-      correlation_search_space_dimension: 0.5
+      correlation_search_space_dimension: 1.0
       correlation_search_space_resolution: 0.01
       correlation_search_space_smear_deviation: 0.1
 
       # Correlation Parameters - Loop Closure Parameters
-      loop_search_space_dimension: 8.0
+      loop_search_space_dimension: 15.0
       loop_search_space_resolution: 0.05
       loop_search_space_smear_deviation: 0.03
 
