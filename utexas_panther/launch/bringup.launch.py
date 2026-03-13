@@ -145,15 +145,20 @@ def generate_launch_description():
         ["'voxel_layer,' if '", observation_topic_type, "' == 'pointcloud' else ''"]
     )
 
-    # Absolute filtered cloud topic: /ouster/points_filtered
-    # Used by pc2ls cloud_in remapping and set in nav2_params as costmap source.
-    observation_topic_filtered = PythonExpression(["'", observation_topic, "' + '_filtered'"])
-
     # Absolute scan topic: /panther/scan
     # pc2ls publishes here; slam_toolbox and AMCL subscribe here.
     namespace_scan_topic = PythonExpression(
         ["'/' + '", namespace, "' + '/scan' if '", namespace, "' else '/scan'"]
     )
+
+    # target_frame for crop_box: e.g. panther/base_link
+    crop_box_target_frame = PythonExpression(
+        ["'", namespace, "' + '/base_link' if '", namespace, "' else 'base_link'"]
+    )
+
+    # Absolute filtered cloud topic: e.g. /ouster/points_filtered
+    # crop_box publishes here; pc2ls and costmap subscribe here.
+    observation_topic_filtered = PythonExpression(["'", observation_topic, "' + '_filtered'"])
 
     # --------------------------------------------------------------------------
     # nav2_params.yaml — substitute all template tokens.
@@ -204,6 +209,44 @@ def generate_launch_description():
     )
 
     # --------------------------------------------------------------------------
+    # pointcloud_crop_box — runs OUTSIDE the namespace group.
+    #
+    # Must be at global scope (no PushRosNamespace). When run inside a namespace
+    # group the node's tf2 buffer silently fails to resolve transforms and drops
+    # all output clouds. Confirmed working via direct CLI invocation first.
+    # --------------------------------------------------------------------------
+    pointcloud_crop_box_node = Node(
+        condition=IfCondition(
+            PythonExpression(["'", observation_topic_type, "' == 'pointcloud'"])
+        ),
+        package="pointcloud_crop_box",
+        executable="pointcloud_crop_box_node",
+        name="pointcloud_crop_box",
+        # No namespace — intentionally global scope.
+        parameters=[
+            {
+                "input_topic": observation_topic,
+                "output_topic": observation_topic_filtered,
+                "target_frame": crop_box_target_frame,
+                "negative": True,
+                "min_x": -0.55,
+                "max_x":  0.55,
+                "min_y": -0.55,
+                "max_y":  0.55,
+                "min_z": -0.10,
+                "max_z":  0.60,
+                "visualize_bounding_box": False,
+                "use_sim_time": use_sim_time,
+            }
+        ],
+        remappings=[
+            ("/tf", "/tf"),
+            ("/tf_static", "/tf_static"),
+        ],
+        output="screen",
+    )
+
+    # --------------------------------------------------------------------------
     # Node group — all nodes inherit PushRosNamespace(namespace).
     # --------------------------------------------------------------------------
     bringup_cmd_group = GroupAction(
@@ -222,8 +265,8 @@ def generate_launch_description():
                 name="pointcloud_to_laserscan",
                 parameters=[configured_pc2ls_params],
                 remappings=[
-                    ("cloud_in", observation_topic),   # /ouster/points directly
-                    ("scan", namespace_scan_topic),    # /panther/scan
+                    ("cloud_in", observation_topic_filtered),  # filtered cloud
+                    ("scan", namespace_scan_topic),            # /panther/scan
                 ],
                 output="screen",
             ),
@@ -322,6 +365,7 @@ def generate_launch_description():
             declare_use_sim_time_arg,
             declare_use_rviz_arg,
             declare_rviz_config_file_cmd,
+            pointcloud_crop_box_node,   # global scope — before namespace group
             bringup_cmd_group,
         ]
     )
