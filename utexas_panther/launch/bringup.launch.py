@@ -210,8 +210,8 @@ def generate_launch_description():
         name="pointcloud_crop_box",
         parameters=[configured_params],
         remappings=[
-            ("cloud_in", observation_topic),           # /ouster/points
-            ("cloud_out", observation_topic_filtered), # /ouster/points_filtered
+            ("points_raw", observation_topic),           # /ouster/points
+            ("points_filtered", observation_topic_filtered), # /ouster/points_filtered
         ],
         output="screen",
     )
