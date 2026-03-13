@@ -516,3 +516,17 @@
       use_response_expansion: true
 
       use_sim_time: false
+
+  pointcloud_crop_box:
+    ros__parameters:
+      input_topic: /ouster/points
+      output_topic: /ouster/points_filtered
+      target_frame: <namespace>/base_link
+      negative: true        # remove points INSIDE the box (robot body)
+      min_x: -0.55
+      max_x: 0.55
+      min_y: -0.55
+      max_y: 0.55
+      min_z: -0.1
+      max_z: 0.6
+      visualize_bounding_box: false
