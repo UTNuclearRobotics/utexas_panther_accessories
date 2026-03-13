@@ -145,14 +145,18 @@ def generate_launch_description():
         ["'voxel_layer,' if '", observation_topic_type, "' == 'pointcloud' else ''"]
     )
 
-    # The crop box node publishes <observation_topic>_filtered.
-    # pointcloud_to_laserscan and the costmap voxel/obstacle layers consume this.
+    # /ouster/points_filtered — absolute, no namespace prefix.
+    # Both crop box (publisher) and pc2ls (subscriber) use this directly.
     observation_topic_filtered = PythonExpression(["'", observation_topic, "' + '_filtered'"])
+
+    # pc2ls publishes scan into the robot namespace so SLAM/AMCL find it at
+    # /<namespace>/scan, matching the <scan_topic> token in nav2_params.yaml.
+    namespace_scan_topic = PythonExpression(
+        ["'/' + '", namespace, "' + '/scan' if '", namespace, "' else '/scan'"]
+    )
 
     # --------------------------------------------------------------------------
     # nav2_params.yaml — substitute all template tokens.
-    # <observation_topic> is replaced with the filtered topic so that costmap
-    # layers receive the robot-body-cropped cloud, not the raw Ouster stream.
     # --------------------------------------------------------------------------
     params_file = ReplaceString(
         source_file=params_file,
@@ -178,8 +182,7 @@ def generate_launch_description():
 
     # --------------------------------------------------------------------------
     # pc2ls_params.yaml — substitute <namespace> token and use_sim_time.
-    # This file is passed only to pointcloud_to_laserscan so its target_frame
-    # resolves correctly without polluting the nav2 parameter namespace.
+    # Passed only to pointcloud_to_laserscan to resolve target_frame correctly.
     # --------------------------------------------------------------------------
     pc2ls_params_file = ReplaceString(
         source_file=pc2ls_params_file,
@@ -198,43 +201,42 @@ def generate_launch_description():
         allow_substs=True,
     )
 
+    pointcloud_crop_box_node = Node(
+        condition=IfCondition(
+            PythonExpression(["'", observation_topic_type, "' == 'pointcloud'"])
+        ),
+        package="pointcloud_crop_box",
+        executable="pointcloud_crop_box_node",
+        name="pointcloud_crop_box",
+        parameters=[configured_params],
+        remappings=[
+            ("cloud_in", observation_topic),           # /ouster/points
+            ("cloud_out", observation_topic_filtered), # /ouster/points_filtered
+        ],
+        output="screen",
+    )
+
+    pointcloud_to_laserscan_node = Node(
+        condition=IfCondition(
+            PythonExpression(["'", observation_topic_type, "' == 'pointcloud'"])
+        ),
+        package="pointcloud_to_laserscan",
+        executable="pointcloud_to_laserscan_node",
+        name="pointcloud_to_laserscan",
+        parameters=[configured_pc2ls_params],
+        remappings=[
+            ("cloud_in", observation_topic_filtered),  # /ouster/points_filtered
+            ("scan", namespace_scan_topic),            # /panther/scan
+        ],
+        output="screen",
+    )
+
     # --------------------------------------------------------------------------
-    # Node group
+    # Nav2 node group — all nodes here inherit PushRosNamespace(namespace)
     # --------------------------------------------------------------------------
     bringup_cmd_group = GroupAction(
         [
             PushRosNamespace(namespace),
-
-            # 1. Strip robot-body returns from the raw pointcloud.
-            # Subscribes to:  <observation_topic>          (raw Ouster cloud)
-            # Publishes to:   <observation_topic>_filtered (crop box output)
-            Node(
-                condition=IfCondition(
-                    PythonExpression(["'", observation_topic_type, "' == 'pointcloud'"])
-                ),
-                package="pointcloud_crop_box",
-                executable="pointcloud_crop_box_node",
-                name="pointcloud_crop_box",
-                parameters=[configured_params],
-                remappings=[("cloud_in", observation_topic)],
-                output="screen",
-            ),
-
-            # 2. Convert the filtered cloud to a LaserScan for SLAM / AMCL.
-            # Subscribes to:  <observation_topic>_filtered
-            # Publishes to:   scan  (consumed by slam_toolbox / amcl via scan_topic)
-            Node(
-                condition=IfCondition(
-                    PythonExpression(["'", observation_topic_type, "' == 'pointcloud'"])
-                ),
-                package="pointcloud_to_laserscan",
-                executable="pointcloud_to_laserscan_node",
-                name="pointcloud_to_laserscan",
-                parameters=[configured_pc2ls_params],
-                remappings=[("cloud_in", observation_topic_filtered)],
-                output="screen",
-            ),
-
             Node(
                 condition=IfCondition(use_composition),
                 name="nav2_container",
@@ -329,6 +331,8 @@ def generate_launch_description():
             declare_use_sim_time_arg,
             declare_use_rviz_arg,
             declare_rviz_config_file_cmd,
+            pointcloud_crop_box_node,
+            pointcloud_to_laserscan_node,
             bringup_cmd_group,
         ]
     )
