@@ -210,19 +210,6 @@ def generate_launch_description():
         [
             PushRosNamespace(namespace),
 
-            # 1. Crop robot body returns from raw pointcloud.
-            # input_topic and output_topic are set via nav2_params.yaml so that
-            Node(
-                condition=IfCondition(
-                    PythonExpression(["'", observation_topic_type, "' == 'pointcloud'"])
-                ),
-                package="pointcloud_crop_box",
-                executable="pointcloud_crop_box_node",
-                name="pointcloud_crop_box",
-                parameters=[configured_params],
-                output="screen",
-            ),
-
             # 2. Convert filtered cloud to LaserScan for SLAM / AMCL.
             # cloud_in  → /ouster/points_filtered  (absolute, bypasses namespace)
             # scan      → /<namespace>/scan         (absolute, into robot namespace)
@@ -235,8 +222,8 @@ def generate_launch_description():
                 name="pointcloud_to_laserscan",
                 parameters=[configured_pc2ls_params],
                 remappings=[
-                    ("cloud_in", observation_topic_filtered),
-                    ("scan", namespace_scan_topic),
+                    ("cloud_in", observation_topic),   # /ouster/points directly
+                    ("scan", namespace_scan_topic),    # /panther/scan
                 ],
                 output="screen",
             ),
