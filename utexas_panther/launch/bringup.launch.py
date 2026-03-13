@@ -20,6 +20,7 @@ from launch.actions import (
     GroupAction,
     IncludeLaunchDescription,
     SetEnvironmentVariable,
+    TimerAction,
 )
 from launch.conditions import IfCondition, UnlessCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
@@ -365,7 +366,12 @@ def generate_launch_description():
             declare_use_sim_time_arg,
             declare_use_rviz_arg,
             declare_rviz_config_file_cmd,
-            pointcloud_crop_box_node,   # global scope — before namespace group
-            bringup_cmd_group,
+            TimerAction(
+                period=3.0,
+                actions=[
+                    pointcloud_crop_box_node,
+                    bringup_cmd_group,
+                ],
+            ),
         ]
     )
