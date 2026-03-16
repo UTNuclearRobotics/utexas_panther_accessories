@@ -468,7 +468,7 @@
       map_update_interval: 1.0
       resolution: 0.05
       max_laser_range: 50.0 #for rastering images
-      max_laser_range: 0.3 #for rastering images
+      min_laser_range: 0.3 #for rastering images
       minimum_time_interval: 0.05
       transform_timeout: 0.5
       tf_buffer_duration: 20.0
@@ -477,7 +477,7 @@
 
       # Map parameters
       map_file_name: ""  # Don't load existing map
-      map_start_at_dock: true
+      map_start_at_dock: false
 
       # General Parameters
       use_scan_matching: true
@@ -485,7 +485,7 @@
       minimum_travel_distance: 0.2
       minimum_travel_heading: 0.1
       scan_buffer_size: 30
-      scan_buffer_maximum_scan_distance: 0.5
+      scan_buffer_maximum_scan_distance: 10.0
       link_match_minimum_response_fine: 0.1
       link_scan_maximum_distance: 1.5
       loop_search_maximum_distance: 50.0

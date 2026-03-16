@@ -128,7 +128,7 @@ def generate_launch_description():
     )
     declare_nav_delay_arg = DeclareLaunchArgument(
         "nav_delay",
-        default_value="5.0",
+        default_value="12.0",
         description=(
             "Seconds to wait after slam_toolbox starts before launching the Nav2 "
             "navigation stack (nav2_container + navigation_launch). "
@@ -309,14 +309,6 @@ def generate_launch_description():
                 }.items(),
             ),
 
-            Node(
-                name="map_autosaver",
-                package="husarion_ugv_navigation",
-                executable="map_autosaver_node",
-                parameters=[configured_params],
-                arguments=["--ros-args", "--log-level", log_level],
-                output="screen",
-            ),
         ],
     )
 
@@ -404,6 +396,19 @@ def generate_launch_description():
                     "use_respawn": use_respawn,
                     "container_name": "nav2_container",
                 }.items(),
+            ),
+
+            # map_autosaver — only when slam=True, and intentionally placed here
+            # (behind nav_delay) so that /panther/map is already being published
+            # by slam_toolbox before this node tries to subscribe to it.
+            Node(
+                condition=IfCondition(slam),
+                name="map_autosaver",
+                package="husarion_ugv_navigation",
+                executable="map_autosaver_node",
+                parameters=[configured_params],
+                arguments=["--ros-args", "--log-level", log_level],
+                output="screen",
             ),
 
             Node(
