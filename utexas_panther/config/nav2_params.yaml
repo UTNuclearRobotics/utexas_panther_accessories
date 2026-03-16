@@ -8,6 +8,7 @@
       robot_base_frame: <namespace>/base_link
       odom_topic: <namespace>/odometry/filtered
       plugin_lib_names:
+        - is_estop
         - nav2_compute_path_to_pose_action_bt_node
         - nav2_follow_path_action_bt_node
         - nav2_back_up_action_bt_node

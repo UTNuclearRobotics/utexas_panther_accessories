@@ -75,33 +75,45 @@ def launch_setup(context, *args, **kwargs):
         }],
     )
 
-    pointcloud_crop_box_node = Node(
-        package="pointcloud_crop_box",
-        executable="pointcloud_crop_box_node",
-        name="pointcloud_crop_box",
-        # No namespace — intentionally global scope.
-        parameters=[
-            {
-                "input_topic": "/ouster/points",
-                "output_topic": "/ouster/points_filtered",
-                "target_frame": "panther/base_link",
-                "negative": True,
-                "min_x": -0.55,
-                "max_x":  0.55,
-                "min_y": -0.55,
-                "max_y":  0.55,
-                "min_z": -0.10,
-                "max_z":  0.60,
-                "visualize_bounding_box": False,
-                "use_sim_time": False,
-            }
+    estop_relay = Node(
+        package='topic_tools',
+        executable='relay',
+        name='estop_relay',
+        output='screen',
+        arguments=[
+            '/panther/hardware/e_stop',
+            '/hardware/e_stop'
         ],
-        remappings=[
-            ("/tf", "/tf"),
-            ("/tf_static", "/tf_static"),
-        ],
-        output="screen",
+        parameters=[{'use_sim_time': False}],
     )
+
+    # pointcloud_crop_box_node = Node(
+    #     package="pointcloud_crop_box",
+    #     executable="pointcloud_crop_box_node",
+    #     name="pointcloud_crop_box",
+    #     # No namespace — intentionally global scope.
+    #     parameters=[
+    #         {
+    #             "input_topic": "/ouster/points",
+    #             "output_topic": "/ouster/points_filtered",
+    #             "target_frame": "panther/base_link",
+    #             "negative": True,
+    #             "min_x": -0.55,
+    #             "max_x":  0.55,
+    #             "min_y": -0.55,
+    #             "max_y":  0.55,
+    #             "min_z": -0.10,
+    #             "max_z":  0.60,
+    #             "visualize_bounding_box": False,
+    #             "use_sim_time": False,
+    #         }
+    #     ],
+    #     remappings=[
+    #         ("/tf", "/tf"),
+    #         ("/tf_static", "/tf_static"),
+    #     ],
+    #     output="screen",
+    # )
 
     # cmd_relay = Node(
     #     package='topic_tools',
@@ -121,7 +133,8 @@ def launch_setup(context, *args, **kwargs):
         goal_relay,
         twist_stamper,
         initial_pose_relay,
-        pointcloud_crop_box_node,
+        estop_relay,
+        # pointcloud_crop_box_node,
         # cmd_relay,
     ]
 
