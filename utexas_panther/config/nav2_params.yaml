@@ -3,7 +3,7 @@
   bt_navigator:
     ros__parameters:
       use_sim_time: false
-      global_frame: <namespace>/map
+      global_frame: map
       robot_base_frame: <namespace>/base_link
       odom_topic: <namespace>/odometry/filtered
       plugin_lib_names:
@@ -218,7 +218,7 @@
       ros__parameters:
         use_sim_time: false
 
-        global_frame: <namespace>/map
+        global_frame: map
         robot_base_frame: <namespace>/base_link
         transform_tolerance: 0.2
 
@@ -257,7 +257,7 @@
         static_layer:
           plugin: nav2_costmap_2d::StaticLayer
           map_subscribe_transient_local: true
-          map_topic: /<namespace>/map
+          map_topic: /map
         voxel_layer:
           plugin: nav2_costmap_2d::VoxelLayer
           footprint_clearing_enabled: true
@@ -366,7 +366,7 @@
     ros__parameters:
       use_sim_time: false
 
-      global_frame_id: <namespace>/map
+      global_frame_id: map
       odom_frame_id: <namespace>/odom
       base_frame_id: <namespace>/base_link
 
@@ -434,8 +434,8 @@
     ros__parameters:
       use_sim_time: false
       yaml_filename: map.yaml
-      topic_name: <namespace>/map
-      frame_id: <namespace>/map
+      topic_name: map
+      frame_id: map
 
   map_autosaver:
     ros__parameters:
@@ -457,7 +457,7 @@
 
       # ROS Parameters
       odom_frame: <namespace>/odom
-      map_frame: <namespace>/map
+      map_frame: map
       base_frame: <namespace>/base_link
       scan_topic: /panther/scan
       mode: mapping #localization
