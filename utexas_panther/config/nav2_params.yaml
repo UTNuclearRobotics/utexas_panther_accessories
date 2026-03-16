@@ -86,7 +86,7 @@
         wz_max: 1.0
         iteration_count: 1
         prune_distance: 2.5
-        transform_tolerance: 0.1
+        transform_tolerance: 0.2
         temperature: 0.3
         gamma: 0.015
         motion_model: DiffDrive
@@ -157,7 +157,7 @@
 
         global_frame: <namespace>/odom
         robot_base_frame: <namespace>/base_link
-        transform_tolerance: 0.1
+        transform_tolerance: 0.2
 
         update_frequency: 5.0
         publish_frequency: 2.0
@@ -220,7 +220,7 @@
 
         global_frame: <namespace>/map
         robot_base_frame: <namespace>/base_link
-        transform_tolerance: 0.1
+        transform_tolerance: 0.2
 
         update_frequency: 1.0
         publish_frequency: 1.0
@@ -309,7 +309,7 @@
 
       global_frame: <namespace>/odom
       robot_base_frame: <namespace>/base_link
-      transform_tolerance: 0.1
+      transform_tolerance: 0.2
 
       costmap_topic: /<namespace>/local_costmap/costmap_raw
       footprint_topic: /<namespace>/local_costmap/published_footprint
