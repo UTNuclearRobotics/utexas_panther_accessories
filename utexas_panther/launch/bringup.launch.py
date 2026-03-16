@@ -180,6 +180,8 @@ def generate_launch_description():
                 parameters=[configured_params, {"autostart": autostart}],
                 arguments=["--ros-args", "--log-level", log_level],
                 output="screen",
+                sigterm_timeout=LaunchConfiguration("sigterm_timeout", default="10"),
+                sigkill_timeout=LaunchConfiguration("sigkill_timeout", default="10"),
             ),
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(PathJoinSubstitution([launch_dir, "slam_launch.py"])),
