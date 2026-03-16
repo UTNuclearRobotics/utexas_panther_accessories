@@ -19,7 +19,6 @@ from launch.actions import (
     DeclareLaunchArgument,
     GroupAction,
     IncludeLaunchDescription,
-    LogInfo,
     SetEnvironmentVariable,
     TimerAction,
 )
@@ -30,6 +29,7 @@ from launch.substitutions import (
     LaunchConfiguration,
     PathJoinSubstitution,
     PythonExpression,
+    TextSubstitution,
 )
 from launch_ros.actions import Node, PushRosNamespace
 from launch_ros.descriptions import ParameterFile
@@ -41,15 +41,17 @@ def generate_launch_description():
     husarion_ugv_navigation = FindPackageShare("husarion_ugv_navigation")
     launch_dir = PathJoinSubstitution([husarion_ugv_navigation, "launch"])
     utexas_panther = FindPackageShare("utexas_panther")
+    utexas_panther_launch_dir = PathJoinSubstitution([utexas_panther, "launch"])
 
     autostart = LaunchConfiguration("autostart")
     log_level = LaunchConfiguration("log_level")
     map = LaunchConfiguration("map")
     namespace = LaunchConfiguration("namespace")
+    observation_topic = LaunchConfiguration("observation_topic")
+    observation_topic_type = LaunchConfiguration("observation_topic_type")
     params_file = LaunchConfiguration("params_file")
+    pc2ls_params_file = LaunchConfiguration("pc2ls_params_file")
     slam = LaunchConfiguration("slam")
-    slam_delay = LaunchConfiguration("slam_delay")
-    nav_delay = LaunchConfiguration("nav_delay")
     use_composition = LaunchConfiguration("use_composition")
     use_respawn = LaunchConfiguration("use_respawn")
     use_sim_time = LaunchConfiguration("use_sim_time")
@@ -75,39 +77,29 @@ def generate_launch_description():
         default_value=EnvironmentVariable("ROBOT_NAMESPACE", default_value=""),
         description="Add namespace to all launched nodes.",
     )
+    declare_observation_topic_arg = DeclareLaunchArgument(
+        "observation_topic",
+        default_value="",
+        description="Topic name for LaserScan or PointCloud2 observation messages type.",
+    )
+    declare_observation_topic_type_arg = DeclareLaunchArgument(
+        "observation_topic_type",
+        default_value="pointcloud",
+        description="Observation topic type.",
+        choices=["laserscan", "pointcloud"],
+    )
     declare_params_file_arg = DeclareLaunchArgument(
         "params_file",
         default_value=PathJoinSubstitution([utexas_panther, "config", "nav2_params.yaml"]),
         description="Path to the parameters file to use for all nav2 related nodes",
     )
+    declare_pc2ls_params_file_arg = DeclareLaunchArgument(
+        "pc2ls_params_file",
+        default_value=PathJoinSubstitution([utexas_panther, "config", "pc2ls_params.yaml"]),
+        description="Path to the parameters file to use for pointcloud_to_laserscan node.",
+    )
     declare_slam_arg = DeclareLaunchArgument(
         "slam", default_value="False", description="Whether run a SLAM."
-    )
-    # ---------------------------------------------------------------------------
-    # NEW: Timing knobs exposed as launch args so you can tune from CLI without
-    # editing this file.  Typical working values on real hardware:
-    #   slam_delay  = 1.0 s  (after the outer 3 s gate — slam starts at t=4 s)
-    #   nav_delay   = 12.0 s (after slam starts — navigation starts at t=16 s)
-    #
-    # Increase nav_delay if slam_toolbox is slow to publish /panther/map on your
-    # machine; decrease it once you know your hardware is fast enough.
-    # ---------------------------------------------------------------------------
-    declare_slam_delay_arg = DeclareLaunchArgument(
-        "slam_delay",
-        default_value="1.0",
-        description=(
-            "Seconds to wait (after the outer 3 s gate) before starting slam_toolbox. "
-            "Total slam start time = 3.0 + slam_delay."
-        ),
-    )
-    declare_nav_delay_arg = DeclareLaunchArgument(
-        "nav_delay",
-        default_value="12.0",
-        description=(
-            "Seconds to wait after slam_toolbox starts before launching the Nav2 "
-            "navigation stack (nav2_container + navigation_launch). "
-            "Increase this if /panther/map is not yet published when costmap initialises."
-        ),
     )
     declare_use_composition_arg = DeclareLaunchArgument(
         "use_composition",
@@ -137,26 +129,43 @@ def generate_launch_description():
     )
 
     # --------------------------------------------------------------------------
-    # nav2_params.yaml substitutions
+    # Substitution helpers
     # --------------------------------------------------------------------------
-    # observation_topic_filtered: sensors.launch.py publishes the crop-boxed
-    # cloud at <observation_topic>_filtered.  We hardcode the same convention
-    # here so the costmap voxel layer subscribes to the right topic.
-    observation_topic_filtered = "/ouster/points_filtered"
-
     param_substitutions = {"use_sim_time": use_sim_time, "yaml_filename": map}
 
     namespace_or_default = PythonExpression(["'", namespace, "' if '", namespace, "' else 'robot'"])
     namespace_ext = PythonExpression(["'", namespace, "' + '/' if '", namespace, "' else ''"])
 
-    # pc2ls is now in sensors.launch.py and always outputs a /panther/scan
-    # LaserScan, so nav2_params always uses the laserscan costmap layer path.
     scan_topic = PythonExpression(
+        ["'scan' if '", observation_topic_type, "' == 'pointcloud' else '", observation_topic, "'"]
+    )
+    add_obstacle_layer = PythonExpression(
+        ["'obstacle_layer,' if '", observation_topic_type, "' == 'laserscan' else ''"]
+    )
+    add_voxel_layer = PythonExpression(
+        ["'voxel_layer,' if '", observation_topic_type, "' == 'pointcloud' else ''"]
+    )
+
+    # Absolute scan topic: /panther/scan
+    # pc2ls publishes here; slam_toolbox and AMCL subscribe here.
+    namespace_scan_topic = PythonExpression(
         ["'/' + '", namespace, "' + '/scan' if '", namespace, "' else '/scan'"]
     )
-    add_obstacle_layer = "obstacle_layer,"
-    add_voxel_layer    = ""
 
+    # target_frame for crop_box: e.g. panther/base_link
+    crop_box_target_frame = PythonExpression(
+        ["'", namespace, "' + '/base_link' if '", namespace, "' else 'base_link'"]
+    )
+
+    # Absolute filtered cloud topic: e.g. /ouster/points_filtered
+    # crop_box publishes here; pc2ls and costmap subscribe here.
+    observation_topic_filtered = PythonExpression(["'", observation_topic, "' + '_filtered'"])
+
+    # --------------------------------------------------------------------------
+    # nav2_params.yaml — substitute all template tokens.
+    # <observation_topic> resolves to the filtered cloud topic so costmap layers
+    # receive robot-body-cropped points.
+    # --------------------------------------------------------------------------
     params_file = ReplaceString(
         source_file=params_file,
         replacements={
@@ -180,50 +189,89 @@ def generate_launch_description():
     )
 
     # --------------------------------------------------------------------------
-    # pointcloud_crop_box and pointcloud_to_laserscan are now launched from
-    # sensors.launch.py before bringup.launch.py is called.
+    # pc2ls_params.yaml — substitute <namespace> token and use_sim_time.
+    # Passed only to pointcloud_to_laserscan to resolve target_frame correctly.
     # --------------------------------------------------------------------------
+    pc2ls_params_file = ReplaceString(
+        source_file=pc2ls_params_file,
+        replacements={
+            "<namespace>": namespace,
+        },
+    )
 
-    # --------------------------------------------------------------------------
-    # SLAM group — starts at t = 1.0 + slam_delay.
-    # --------------------------------------------------------------------------
-    slam_bringup_group = GroupAction(
-        condition=IfCondition(slam),
-        actions=[
-            PushRosNamespace(namespace),
-
-            IncludeLaunchDescription(
-                PythonLaunchDescriptionSource(
-                    PathJoinSubstitution([launch_dir, "slam_launch.py"])
-                ),
-                launch_arguments={
-                    "autostart": autostart,
-                    "namespace": namespace,
-                    "params_file": params_file,
-                    "use_respawn": use_respawn,
-                    "use_sim_time": use_sim_time,
-                }.items(),
-            ),
-
-        ],
+    configured_pc2ls_params = ParameterFile(
+        RewrittenYaml(
+            source_file=pc2ls_params_file,
+            root_key="",
+            param_rewrites={"use_sim_time": use_sim_time},
+            convert_types=True,
+        ),
+        allow_substs=True,
     )
 
     # --------------------------------------------------------------------------
-    # Navigation group — starts at t = 3.0 + slam_delay + nav_delay.
+    # pointcloud_crop_box — runs OUTSIDE the namespace group.
     #
-    # By this time slam_toolbox should have published at least one /panther/map
-    # message, so the costmap's static layer won't stall waiting for the map.
-    #
-    # Also handles the localization path (AMCL) when slam=False: in that case
-    # there is no race because /panther/map comes from map_server which loads
-    # instantly, so nav_delay = 0 is fine and the delay is harmless.
+    # Must be at global scope (no PushRosNamespace). When run inside a namespace
+    # group the node's tf2 buffer silently fails to resolve transforms and drops
+    # all output clouds. Confirmed working via direct CLI invocation first.
     # --------------------------------------------------------------------------
-    nav_bringup_group = GroupAction(
-        actions=[
+    pointcloud_crop_box_node = Node(
+        condition=IfCondition(
+            PythonExpression(["'", observation_topic_type, "' == 'pointcloud'"])
+        ),
+        package="pointcloud_crop_box",
+        executable="pointcloud_crop_box_node",
+        name="pointcloud_crop_box",
+        # No namespace — intentionally global scope.
+        parameters=[
+            {
+                "input_topic": observation_topic,
+                "output_topic": observation_topic_filtered,
+                "target_frame": crop_box_target_frame,
+                "negative": True,
+                "min_x": -0.55,
+                "max_x":  0.55,
+                "min_y": -0.55,
+                "max_y":  0.55,
+                "min_z": -0.10,
+                "max_z":  0.60,
+                "visualize_bounding_box": False,
+                "use_sim_time": use_sim_time,
+            }
+        ],
+        remappings=[
+            ("/tf", "/tf"),
+            ("/tf_static", "/tf_static"),
+        ],
+        output="screen",
+    )
+
+    # --------------------------------------------------------------------------
+    # Node group — all nodes inherit PushRosNamespace(namespace).
+    # --------------------------------------------------------------------------
+    bringup_cmd_group = GroupAction(
+        [
             PushRosNamespace(namespace),
 
-            # Nav2 component container — must exist before localization/navigation
-            # launch files try to load components into it.
+            # 2. Convert filtered cloud to LaserScan for SLAM / AMCL.
+            # cloud_in  → /ouster/points_filtered  (absolute, bypasses namespace)
+            # scan      → /<namespace>/scan         (absolute, into robot namespace)
+            Node(
+                condition=IfCondition(
+                    PythonExpression(["'", observation_topic_type, "' == 'pointcloud'"])
+                ),
+                package="pointcloud_to_laserscan",
+                executable="pointcloud_to_laserscan_node",
+                name="pointcloud_to_laserscan",
+                parameters=[configured_pc2ls_params],
+                remappings=[
+                    ("cloud_in", observation_topic_filtered),  # filtered cloud
+                    ("scan", namespace_scan_topic),            # /panther/scan
+                ],
+                output="screen",
+            ),
+
             Node(
                 condition=IfCondition(use_composition),
                 name="nav2_container",
@@ -233,8 +281,19 @@ def generate_launch_description():
                 arguments=["--ros-args", "--log-level", log_level],
                 output="screen",
             ),
-
-            # Localization (AMCL) — only when slam=False.
+            IncludeLaunchDescription(
+                PythonLaunchDescriptionSource(
+                    PathJoinSubstitution([launch_dir, "slam_launch.py"])
+                ),
+                condition=IfCondition(slam),
+                launch_arguments={
+                    "autostart": autostart,
+                    "namespace": namespace,
+                    "params_file": params_file,
+                    "use_respawn": use_respawn,
+                    "use_sim_time": use_sim_time,
+                }.items(),
+            ),
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(
                     PathJoinSubstitution([launch_dir, "localization_launch.py"])
@@ -251,8 +310,6 @@ def generate_launch_description():
                     "use_sim_time": use_sim_time,
                 }.items(),
             ),
-
-            # Navigation stack (controller, planner, costmaps, BT navigator …).
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(
                     PathJoinSubstitution([launch_dir, "navigation_launch.py"])
@@ -267,10 +324,6 @@ def generate_launch_description():
                     "container_name": "nav2_container",
                 }.items(),
             ),
-
-            # map_autosaver — only when slam=True, and intentionally placed here
-            # (behind nav_delay) so that /panther/map is already being published
-            # by slam_toolbox before this node tries to subscribe to it.
             Node(
                 condition=IfCondition(slam),
                 name="map_autosaver",
@@ -280,44 +333,20 @@ def generate_launch_description():
                 arguments=["--ros-args", "--log-level", log_level],
                 output="screen",
             ),
-
+            # Launch rviz2
             Node(
                 condition=IfCondition(use_rviz),
                 package="rviz2",
                 executable="rviz2",
                 name="rviz_mapping",
-                arguments=["-d", PathJoinSubstitution([rviz_config_file])],
+                arguments=[
+                    "-d",
+                    PathJoinSubstitution([rviz_config_file]),
+                ],
                 parameters=[{"use_sim_time": use_sim_time}],
                 output="screen",
             ),
         ]
-    )
-
-    # --------------------------------------------------------------------------
-    # Outer gate: wait 1 s for DDS to settle, then:
-    #   t = 1.0 + slam_delay             → slam_bringup_group starts
-    #   t = 1.0 + slam_delay + nav_delay → nav_bringup_group starts
-    #
-    # crop_box and pc2ls are now in sensors.launch.py and are already running
-    # before this file is called.  The inner TimerAction for nav is nested
-    # inside the slam TimerAction so nav_delay is measured from when slam fires.
-    # --------------------------------------------------------------------------
-    nav_timer = TimerAction(
-        period=nav_delay,
-        actions=[
-            LogInfo(msg=["[bringup] nav_delay elapsed — starting Nav2 navigation stack."]),
-            nav_bringup_group,
-        ],
-    )
-
-    slam_and_nav_timer = TimerAction(
-        period=slam_delay,
-        actions=[
-            LogInfo(msg=["[bringup] slam_delay elapsed — starting slam_toolbox."]),
-            slam_bringup_group,
-            # Nav timer starts counting from the moment slam fires.
-            nav_timer,
-        ],
     )
 
     return LaunchDescription(
@@ -327,10 +356,11 @@ def generate_launch_description():
             declare_log_level_arg,
             declare_map_arg,
             declare_namespace_arg,
+            declare_observation_topic_arg,
+            declare_observation_topic_type_arg,
             declare_params_file_arg,
+            declare_pc2ls_params_file_arg,
             declare_slam_arg,
-            declare_slam_delay_arg,
-            declare_nav_delay_arg,
             declare_use_composition_arg,
             declare_use_respawn_arg,
             declare_use_sim_time_arg,
@@ -339,8 +369,8 @@ def generate_launch_description():
             TimerAction(
                 period=1.0,
                 actions=[
-                    LogInfo(msg=["[bringup] Hardware gate elapsed — starting SLAM timer."]),
-                    slam_and_nav_timer,
+                    pointcloud_crop_box_node,
+                    bringup_cmd_group,
                 ],
             ),
         ]
