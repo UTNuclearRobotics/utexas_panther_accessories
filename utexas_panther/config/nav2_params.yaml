@@ -47,7 +47,7 @@
       use_sim_time: false
 
       controller_frequency: 10.0
-      odom_topic: odometry/filtered
+      odom_topic: <namespace>/odometry/filtered
       costmap_update_timeout: 0.5
 
       min_x_velocity_threshold: 0.01
@@ -564,16 +564,16 @@
   pointcloud_to_laserscan:
     ros__parameters:
       use_sim_time: false
-      min_height: <min_z>
-      max_height: <max_z>
+      min_height: 0.1
+      max_height: 2.0
       angle_min: -3.14
       angle_max: 3.14
       angle_increment: 0.01
       scan_time: 0.1
-      range_min: 0.7
-      range_max: 20.0
+      range_min: 0.3
+      range_max: 50.0
       target_frame: <namespace>/base_link
-      transform_tolerance: 0.01
+      transform_tolerance: 0.1
       inf_epsilon: 1.0
       use_inf: true
 
