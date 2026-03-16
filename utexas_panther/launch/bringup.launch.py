@@ -173,7 +173,7 @@ def generate_launch_description():
                 output="screen",
             ),
             IncludeLaunchDescription(
-                PythonLaunchDescriptionSource(PathJoinSubstitution([launch_dir, "slam_launch.py"])),
+                PythonLaunchDescriptionSource(PathJoinSubstitution([utexas_panther_launch_dir, "slam_launch.py"])),
                 condition=IfCondition(slam),
                 launch_arguments={
                     "autostart": autostart,
