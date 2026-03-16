@@ -17,18 +17,12 @@ import os
 from launch import LaunchDescription
 from launch.actions import (
     DeclareLaunchArgument,
-    EmitEvent,
-    ExecuteProcess,
     GroupAction,
     IncludeLaunchDescription,
-    LogInfo,
-    RegisterEventHandler,
     SetEnvironmentVariable,
     TimerAction,
 )
 from launch.conditions import IfCondition, UnlessCondition
-from launch.event_handlers import OnProcessExit, OnExecutionComplete
-from launch.events import Shutdown
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import (
     EnvironmentVariable,
@@ -58,8 +52,6 @@ def generate_launch_description():
     params_file = LaunchConfiguration("params_file")
     pc2ls_params_file = LaunchConfiguration("pc2ls_params_file")
     slam = LaunchConfiguration("slam")
-    slam_delay = LaunchConfiguration("slam_delay")
-    nav_delay = LaunchConfiguration("nav_delay")
     use_composition = LaunchConfiguration("use_composition")
     use_respawn = LaunchConfiguration("use_respawn")
     use_sim_time = LaunchConfiguration("use_sim_time")
@@ -109,32 +101,6 @@ def generate_launch_description():
     declare_slam_arg = DeclareLaunchArgument(
         "slam", default_value="False", description="Whether run a SLAM."
     )
-    # ---------------------------------------------------------------------------
-    # NEW: Timing knobs exposed as launch args so you can tune from CLI without
-    # editing this file.  Typical working values on real hardware:
-    #   slam_delay  = 1.0 s  (after the outer 3 s gate — slam starts at t=4 s)
-    #   nav_delay   = 12.0 s (after slam starts — navigation starts at t=16 s)
-    #
-    # Increase nav_delay if slam_toolbox is slow to publish /panther/map on your
-    # machine; decrease it once you know your hardware is fast enough.
-    # ---------------------------------------------------------------------------
-    declare_slam_delay_arg = DeclareLaunchArgument(
-        "slam_delay",
-        default_value="1.0",
-        description=(
-            "Seconds to wait (after the outer 3 s gate) before starting slam_toolbox. "
-            "Total slam start time = 3.0 + slam_delay."
-        ),
-    )
-    declare_nav_delay_arg = DeclareLaunchArgument(
-        "nav_delay",
-        default_value="12.0",
-        description=(
-            "Seconds to wait after slam_toolbox starts before launching the Nav2 "
-            "navigation stack (nav2_container + navigation_launch). "
-            "Increase this if /panther/map is not yet published when costmap initialises."
-        ),
-    )
     declare_use_composition_arg = DeclareLaunchArgument(
         "use_composition",
         default_value="True",
@@ -180,18 +146,25 @@ def generate_launch_description():
         ["'voxel_layer,' if '", observation_topic_type, "' == 'pointcloud' else ''"]
     )
 
+    # Absolute scan topic: /panther/scan
+    # pc2ls publishes here; slam_toolbox and AMCL subscribe here.
     namespace_scan_topic = PythonExpression(
         ["'/' + '", namespace, "' + '/scan' if '", namespace, "' else '/scan'"]
     )
 
+    # target_frame for crop_box: e.g. panther/base_link
     crop_box_target_frame = PythonExpression(
         ["'", namespace, "' + '/base_link' if '", namespace, "' else 'base_link'"]
     )
 
+    # Absolute filtered cloud topic: e.g. /ouster/points_filtered
+    # crop_box publishes here; pc2ls and costmap subscribe here.
     observation_topic_filtered = PythonExpression(["'", observation_topic, "' + '_filtered'"])
 
     # --------------------------------------------------------------------------
-    # nav2_params.yaml substitutions
+    # nav2_params.yaml — substitute all template tokens.
+    # <observation_topic> resolves to the filtered cloud topic so costmap layers
+    # receive robot-body-cropped points.
     # --------------------------------------------------------------------------
     params_file = ReplaceString(
         source_file=params_file,
@@ -215,15 +188,9 @@ def generate_launch_description():
         allow_substs=True,
     )
 
-    configured_params_path = RewrittenYaml(
-        source_file=params_file,
-        root_key="",
-        param_rewrites=param_substitutions,
-        convert_types=True,
-    )
-
     # --------------------------------------------------------------------------
-    # pc2ls_params.yaml substitutions
+    # pc2ls_params.yaml — substitute <namespace> token and use_sim_time.
+    # Passed only to pointcloud_to_laserscan to resolve target_frame correctly.
     # --------------------------------------------------------------------------
     pc2ls_params_file = ReplaceString(
         source_file=pc2ls_params_file,
@@ -243,7 +210,11 @@ def generate_launch_description():
     )
 
     # --------------------------------------------------------------------------
-    # pointcloud_crop_box — global scope (no namespace), same as before.
+    # pointcloud_crop_box — runs OUTSIDE the namespace group.
+    #
+    # Must be at global scope (no PushRosNamespace). When run inside a namespace
+    # group the node's tf2 buffer silently fails to resolve transforms and drops
+    # all output clouds. Confirmed working via direct CLI invocation first.
     # --------------------------------------------------------------------------
     pointcloud_crop_box_node = Node(
         condition=IfCondition(
@@ -252,6 +223,7 @@ def generate_launch_description():
         package="pointcloud_crop_box",
         executable="pointcloud_crop_box_node",
         name="pointcloud_crop_box",
+        # No namespace — intentionally global scope.
         parameters=[
             {
                 "input_topic": observation_topic,
@@ -276,18 +248,15 @@ def generate_launch_description():
     )
 
     # --------------------------------------------------------------------------
-    # SLAM group — starts at t = 3.0 + slam_delay.
-    #
-    # slam_toolbox (via slam_launch.py) and pc2ls start here.  The lifecycle
-    # manager inside slam_launch.py will bring up slam_toolbox and it will begin
-    # publishing /panther/map only after it has processed enough scans.
+    # Node group — all nodes inherit PushRosNamespace(namespace).
     # --------------------------------------------------------------------------
-    slam_bringup_group = GroupAction(
-        condition=IfCondition(slam),
-        actions=[
+    bringup_cmd_group = GroupAction(
+        [
             PushRosNamespace(namespace),
 
-            # pointcloud_to_laserscan feeds slam_toolbox.
+            # 2. Convert filtered cloud to LaserScan for SLAM / AMCL.
+            # cloud_in  → /ouster/points_filtered  (absolute, bypasses namespace)
+            # scan      → /<namespace>/scan         (absolute, into robot namespace)
             Node(
                 condition=IfCondition(
                     PythonExpression(["'", observation_topic_type, "' == 'pointcloud'"])
@@ -297,70 +266,12 @@ def generate_launch_description():
                 name="pointcloud_to_laserscan",
                 parameters=[configured_pc2ls_params],
                 remappings=[
-                    ("cloud_in", observation_topic_filtered),
-                    ("scan", namespace_scan_topic),
+                    ("cloud_in", observation_topic_filtered),  # filtered cloud
+                    ("scan", namespace_scan_topic),            # /panther/scan
                 ],
                 output="screen",
             ),
 
-            IncludeLaunchDescription(
-                PythonLaunchDescriptionSource(
-                    PathJoinSubstitution([launch_dir, "slam_launch.py"])
-                ),
-                launch_arguments={
-                    "autostart": autostart,
-                    "namespace": namespace,
-                    "params_file": configured_params_path,
-                    "use_respawn": use_respawn,
-                    "use_sim_time": use_sim_time,
-                }.items(),
-            ),
-
-        ],
-    )
-
-    # --------------------------------------------------------------------------
-    # Navigation group — starts at t = 3.0 + slam_delay + nav_delay.
-    #
-    # By this time slam_toolbox should have published at least one /panther/map
-    # message, so the costmap's static layer won't stall waiting for the map.
-    #
-    # Also handles the localization path (AMCL) when slam=False: in that case
-    # there is no race because /panther/map comes from map_server which loads
-    # instantly, so nav_delay = 0 is fine and the delay is harmless.
-    # --------------------------------------------------------------------------
-    nav_bringup_group = GroupAction(
-        actions=[
-            PushRosNamespace(namespace),
-
-            # pc2ls for the localization (non-SLAM) path.  When slam=True this
-            # node is already running in slam_bringup_group above; launching it
-            # a second time would cause a duplicate-node conflict.  The
-            # UnlessCondition(slam) guard prevents that.
-            Node(
-                condition=IfCondition(
-                    PythonExpression(
-                        [
-                            "'",
-                            observation_topic_type,
-                            "' == 'pointcloud' and not ",
-                            slam,
-                        ]
-                    )
-                ),
-                package="pointcloud_to_laserscan",
-                executable="pointcloud_to_laserscan_node",
-                name="pointcloud_to_laserscan",
-                parameters=[configured_pc2ls_params],
-                remappings=[
-                    ("cloud_in", observation_topic_filtered),
-                    ("scan", namespace_scan_topic),
-                ],
-                output="screen",
-            ),
-
-            # Nav2 component container — must exist before localization/navigation
-            # launch files try to load components into it.
             Node(
                 condition=IfCondition(use_composition),
                 name="nav2_container",
@@ -370,8 +281,19 @@ def generate_launch_description():
                 arguments=["--ros-args", "--log-level", log_level],
                 output="screen",
             ),
-
-            # Localization (AMCL) — only when slam=False.
+            IncludeLaunchDescription(
+                PythonLaunchDescriptionSource(
+                    PathJoinSubstitution([launch_dir, "slam_launch.py"])
+                ),
+                condition=IfCondition(slam),
+                launch_arguments={
+                    "autostart": autostart,
+                    "namespace": namespace,
+                    "params_file": params_file,
+                    "use_respawn": use_respawn,
+                    "use_sim_time": use_sim_time,
+                }.items(),
+            ),
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(
                     PathJoinSubstitution([launch_dir, "localization_launch.py"])
@@ -388,8 +310,6 @@ def generate_launch_description():
                     "use_sim_time": use_sim_time,
                 }.items(),
             ),
-
-            # Navigation stack (controller, planner, costmaps, BT navigator …).
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(
                     PathJoinSubstitution([launch_dir, "navigation_launch.py"])
@@ -404,10 +324,6 @@ def generate_launch_description():
                     "container_name": "nav2_container",
                 }.items(),
             ),
-
-            # map_autosaver — only when slam=True, and intentionally placed here
-            # (behind nav_delay) so that /panther/map is already being published
-            # by slam_toolbox before this node tries to subscribe to it.
             Node(
                 condition=IfCondition(slam),
                 name="map_autosaver",
@@ -417,44 +333,20 @@ def generate_launch_description():
                 arguments=["--ros-args", "--log-level", log_level],
                 output="screen",
             ),
-
+            # Launch rviz2
             Node(
                 condition=IfCondition(use_rviz),
                 package="rviz2",
                 executable="rviz2",
                 name="rviz_mapping",
-                arguments=["-d", PathJoinSubstitution([rviz_config_file])],
+                arguments=[
+                    "-d",
+                    PathJoinSubstitution([rviz_config_file]),
+                ],
                 parameters=[{"use_sim_time": use_sim_time}],
                 output="screen",
             ),
         ]
-    )
-
-    # --------------------------------------------------------------------------
-    # Outer gate: wait 3 s for hardware drivers / DDS to settle, then:
-    #   t = 3.0              → crop_box starts
-    #   t = 3.0 + slam_delay → slam_bringup_group starts (slam_toolbox + pc2ls)
-    #   t = 3.0 + slam_delay + nav_delay → nav_bringup_group starts
-    #
-    # The inner TimerAction for nav is nested inside the slam TimerAction so
-    # that nav_delay is measured from when slam actually fired, not from t=0.
-    # --------------------------------------------------------------------------
-    nav_timer = TimerAction(
-        period=nav_delay,
-        actions=[
-            LogInfo(msg=["[bringup] nav_delay elapsed — starting Nav2 navigation stack."]),
-            nav_bringup_group,
-        ],
-    )
-
-    slam_and_nav_timer = TimerAction(
-        period=slam_delay,
-        actions=[
-            LogInfo(msg=["[bringup] slam_delay elapsed — starting slam_toolbox."]),
-            slam_bringup_group,
-            # Nav timer starts counting from the moment slam fires.
-            nav_timer,
-        ],
     )
 
     return LaunchDescription(
@@ -469,19 +361,16 @@ def generate_launch_description():
             declare_params_file_arg,
             declare_pc2ls_params_file_arg,
             declare_slam_arg,
-            declare_slam_delay_arg,
-            declare_nav_delay_arg,
             declare_use_composition_arg,
             declare_use_respawn_arg,
             declare_use_sim_time_arg,
             declare_use_rviz_arg,
             declare_rviz_config_file_cmd,
             TimerAction(
-                period=1.0,
+                period=3.0,
                 actions=[
-                    LogInfo(msg=["[bringup] Hardware gate elapsed — starting crop_box and SLAM timer."]),
                     pointcloud_crop_box_node,
-                    slam_and_nav_timer,
+                    bringup_cmd_group,
                 ],
             ),
         ]

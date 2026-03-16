@@ -11,7 +11,7 @@
       scan_time: 0.1
       range_min: 0.3
       range_max: 50.0
-      target_frame: "<namespace>/base_link"
-      transform_tolerance: 0.1
+      target_frame: panther/base_link
+      transform_tolerance: 0.2
       inf_epsilon: 1.0
       use_inf: true
