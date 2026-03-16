@@ -572,7 +572,7 @@
       scan_time: 0.1
       range_min: 0.3
       range_max: 50.0
-      target_frame: <namespace>/base_link
+      target_frame: os_lidar
       transform_tolerance: 0.1
       inf_epsilon: 1.0
       use_inf: true

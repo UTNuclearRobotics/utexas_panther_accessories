@@ -17,12 +17,7 @@ import os
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import (
-    DeclareLaunchArgument,
-    ExecuteProcess,
-    GroupAction,
-    SetEnvironmentVariable,
-)
+from launch.actions import DeclareLaunchArgument, GroupAction, SetEnvironmentVariable
 from launch.conditions import IfCondition
 from launch.substitutions import (
     EnvironmentVariable,
@@ -59,14 +54,7 @@ def generate_launch_description():
     ]
 
     # Create our own temporary YAML files that include substitutions
-    #
-    # NOTE: autostart is intentionally NOT passed here. Nav2 nodes are always
-    # loaded with autostart=false regardless of the launch argument. The
-    # tf_gated_autostart ExecuteProcess below is what actually triggers
-    # lifecycle activation — but only after the odom TF frame is confirmed
-    # live. This eliminates the race condition between slam_toolbox publishing
-    # its first odom→map transform and Nav2 costmaps activating.
-    param_substitutions = {"use_sim_time": use_sim_time}
+    param_substitutions = {"use_sim_time": use_sim_time, "autostart": autostart}
 
     configured_params = ParameterFile(
         RewrittenYaml(
@@ -142,59 +130,6 @@ def generate_launch_description():
         },
         condition=IfCondition(PythonExpression(["'", ros_distro, "' == 'humble'"])),
     )
-
-    # --- slam_toolbox-gated autostart ----------------------------------------
-    # Polls until slam_toolbox has published its first map→odom transform, which
-    # only happens AFTER "Registering sensor" — i.e. after slam_toolbox has fully
-    # initialized its solver, scan matcher, and processed its first laser scan.
-    # The lifecycle manager active state is NOT sufficient: slam_toolbox reports
-    # active ~2 seconds before it is actually ready to publish TF.
-    #
-    # map→odom is exclusively published by slam_toolbox, so its presence is a
-    # reliable signal that slam_toolbox is fully initialized. Using odom→base_link
-    # would fire too early since that comes from the odometry EKF independently.
-    #
-    # The script logic:
-    #   1. Spin-wait on `ros2 run tf2_ros tf2_echo` with a 1-second timeout per
-    #      attempt, retrying every 0.5 s until map→odom is valid.
-    #   2. Once confirmed, call the lifecycle manager startup service.
-    #      ManageLifecycleNodes command 3 = STARTUP.
-    #
-    # The condition=IfCondition(autostart) preserves the ability to launch with
-    # autostart:=false for manual control (e.g. debugging).
-    tf_gated_autostart = ExecuteProcess(
-        condition=IfCondition(autostart),
-        cmd=[
-            "/bin/bash",
-            "-c",
-            [
-                # Step 1: wait for slam_toolbox to publish map→odom
-                "echo '[nav2_tf_wait] Waiting for slam_toolbox to publish ",
-                namespace,
-                "/map → ",
-                namespace,
-                "/odom...'; ",
-                "until ros2 run tf2_ros tf2_echo ",
-                namespace,
-                "/map ",
-                namespace,
-                "/odom --spin-time 1 2>&1 | grep -q 'Translation:'; do ",
-                "  echo '[nav2_tf_wait] slam_toolbox not ready, retrying...'; ",
-                "  sleep 0.5; ",
-                "done; ",
-                # Step 2: trigger lifecycle startup
-                "echo '[nav2_tf_wait] slam_toolbox ready — activating Nav2 lifecycle nodes...'; ",
-                "ros2 service call /",
-                namespace,
-                "/lifecycle_manager_navigation/manage_nodes ",
-                "nav2_msgs/srv/ManageLifecycleNodes ",
-                "'{command: 3}'",  # 3 = STARTUP
-            ],
-        ],
-        output="screen",
-        shell=True,
-    )
-    # -------------------------------------------------------------------------
 
     load_nodes = GroupAction(
         condition=IfCondition(PythonExpression(["not ", use_composition])),
@@ -278,7 +213,7 @@ def generate_launch_description():
                 arguments=["--ros-args", "--log-level", log_level],
                 parameters=[
                     {"use_sim_time": use_sim_time},
-                    {"autostart": False},  # tf_gated_autostart handles activation
+                    {"autostart": autostart},
                     {"node_names": lifecycle_nodes},
                 ],
             ),
@@ -331,9 +266,6 @@ def generate_launch_description():
                 plugin="nav2_velocity_smoother::VelocitySmoother",
                 name="velocity_smoother",
                 parameters=[configured_params],
-                # BUG FIX: remappings were present in load_nodes but missing
-                # from the composable path, causing cmd_vel to be unpublished
-                # when use_composition:=True.
                 remappings=[("cmd_vel", "cmd_vel_nav"), ("cmd_vel_smoothed", "cmd_vel")],
             ),
             ComposableNode(
@@ -343,7 +275,7 @@ def generate_launch_description():
                 parameters=[
                     {
                         "use_sim_time": use_sim_time,
-                        "autostart": False,  # tf_gated_autostart handles activation
+                        "autostart": autostart,
                         "node_names": lifecycle_nodes,
                     }
                 ],
@@ -366,13 +298,8 @@ def generate_launch_description():
     ld.add_action(declare_container_name_cmd)
     ld.add_action(declare_use_respawn_cmd)
     ld.add_action(declare_log_level_cmd)
-
     # Add the actions to launch all of the navigation nodes
     ld.add_action(load_nodes)
     ld.add_action(load_composable_nodes)
-
-    # Start the TF-gated autostart watcher — this fires the lifecycle STARTUP
-    # service call only after slam_toolbox has published its first TF.
-    ld.add_action(tf_gated_autostart)
 
     return ld
