@@ -261,7 +261,7 @@ def generate_launch_description():
             ),
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(
-                    PathJoinSubstitution([launch_dir, "navigation_launch.py"])
+                    PathJoinSubstitution([utexas_panther_launch_dir, "navigation_launch.py"])
                 ),
                 launch_arguments={
                     "namespace": namespace,
