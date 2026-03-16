@@ -215,6 +215,13 @@ def generate_launch_description():
         allow_substs=True,
     )
 
+    configured_params_path = RewrittenYaml(
+        source_file=params_file,
+        root_key="",
+        param_rewrites=param_substitutions,
+        convert_types=True,
+    )
+
     # --------------------------------------------------------------------------
     # pc2ls_params.yaml substitutions
     # --------------------------------------------------------------------------
@@ -303,7 +310,7 @@ def generate_launch_description():
                 launch_arguments={
                     "autostart": autostart,
                     "namespace": namespace,
-                    "params_file": params_file,
+                    "params_file": configured_params_path,
                     "use_respawn": use_respawn,
                     "use_sim_time": use_sim_time,
                 }.items(),
