@@ -17,25 +17,19 @@ import os
 from launch import LaunchDescription
 from launch.actions import (
     DeclareLaunchArgument,
-    EmitEvent,
-    ExecuteProcess,
     GroupAction,
     IncludeLaunchDescription,
     LogInfo,
-    RegisterEventHandler,
     SetEnvironmentVariable,
     TimerAction,
 )
 from launch.conditions import IfCondition, UnlessCondition
-from launch.event_handlers import OnProcessExit, OnExecutionComplete
-from launch.events import Shutdown
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import (
     EnvironmentVariable,
     LaunchConfiguration,
     PathJoinSubstitution,
     PythonExpression,
-    TextSubstitution,
 )
 from launch_ros.actions import Node, PushRosNamespace
 from launch_ros.descriptions import ParameterFile
@@ -47,16 +41,12 @@ def generate_launch_description():
     husarion_ugv_navigation = FindPackageShare("husarion_ugv_navigation")
     launch_dir = PathJoinSubstitution([husarion_ugv_navigation, "launch"])
     utexas_panther = FindPackageShare("utexas_panther")
-    utexas_panther_launch_dir = PathJoinSubstitution([utexas_panther, "launch"])
 
     autostart = LaunchConfiguration("autostart")
     log_level = LaunchConfiguration("log_level")
     map = LaunchConfiguration("map")
     namespace = LaunchConfiguration("namespace")
-    observation_topic = LaunchConfiguration("observation_topic")
-    observation_topic_type = LaunchConfiguration("observation_topic_type")
     params_file = LaunchConfiguration("params_file")
-    pc2ls_params_file = LaunchConfiguration("pc2ls_params_file")
     slam = LaunchConfiguration("slam")
     slam_delay = LaunchConfiguration("slam_delay")
     nav_delay = LaunchConfiguration("nav_delay")
@@ -85,26 +75,10 @@ def generate_launch_description():
         default_value=EnvironmentVariable("ROBOT_NAMESPACE", default_value=""),
         description="Add namespace to all launched nodes.",
     )
-    declare_observation_topic_arg = DeclareLaunchArgument(
-        "observation_topic",
-        default_value="",
-        description="Topic name for LaserScan or PointCloud2 observation messages type.",
-    )
-    declare_observation_topic_type_arg = DeclareLaunchArgument(
-        "observation_topic_type",
-        default_value="pointcloud",
-        description="Observation topic type.",
-        choices=["laserscan", "pointcloud"],
-    )
     declare_params_file_arg = DeclareLaunchArgument(
         "params_file",
         default_value=PathJoinSubstitution([utexas_panther, "config", "nav2_params.yaml"]),
         description="Path to the parameters file to use for all nav2 related nodes",
-    )
-    declare_pc2ls_params_file_arg = DeclareLaunchArgument(
-        "pc2ls_params_file",
-        default_value=PathJoinSubstitution([utexas_panther, "config", "pc2ls_params.yaml"]),
-        description="Path to the parameters file to use for pointcloud_to_laserscan node.",
     )
     declare_slam_arg = DeclareLaunchArgument(
         "slam", default_value="False", description="Whether run a SLAM."
@@ -163,36 +137,26 @@ def generate_launch_description():
     )
 
     # --------------------------------------------------------------------------
-    # Substitution helpers
+    # nav2_params.yaml substitutions
     # --------------------------------------------------------------------------
+    # observation_topic_filtered: sensors.launch.py publishes the crop-boxed
+    # cloud at <observation_topic>_filtered.  We hardcode the same convention
+    # here so the costmap voxel layer subscribes to the right topic.
+    observation_topic_filtered = "/ouster/points_filtered"
+
     param_substitutions = {"use_sim_time": use_sim_time, "yaml_filename": map}
 
     namespace_or_default = PythonExpression(["'", namespace, "' if '", namespace, "' else 'robot'"])
     namespace_ext = PythonExpression(["'", namespace, "' + '/' if '", namespace, "' else ''"])
 
+    # pc2ls is now in sensors.launch.py and always outputs a /panther/scan
+    # LaserScan, so nav2_params always uses the laserscan costmap layer path.
     scan_topic = PythonExpression(
-        ["'scan' if '", observation_topic_type, "' == 'pointcloud' else '", observation_topic, "'"]
-    )
-    add_obstacle_layer = PythonExpression(
-        ["'obstacle_layer,' if '", observation_topic_type, "' == 'laserscan' else ''"]
-    )
-    add_voxel_layer = PythonExpression(
-        ["'voxel_layer,' if '", observation_topic_type, "' == 'pointcloud' else ''"]
-    )
-
-    namespace_scan_topic = PythonExpression(
         ["'/' + '", namespace, "' + '/scan' if '", namespace, "' else '/scan'"]
     )
+    add_obstacle_layer = "obstacle_layer,"
+    add_voxel_layer    = ""
 
-    crop_box_target_frame = PythonExpression(
-        ["'", namespace, "' + '/base_link' if '", namespace, "' else 'base_link'"]
-    )
-
-    observation_topic_filtered = PythonExpression(["'", observation_topic, "' + '_filtered'"])
-
-    # --------------------------------------------------------------------------
-    # nav2_params.yaml substitutions
-    # --------------------------------------------------------------------------
     params_file = ReplaceString(
         source_file=params_file,
         replacements={
@@ -216,85 +180,17 @@ def generate_launch_description():
     )
 
     # --------------------------------------------------------------------------
-    # pc2ls_params.yaml substitutions
+    # pointcloud_crop_box and pointcloud_to_laserscan are now launched from
+    # sensors.launch.py before bringup.launch.py is called.
     # --------------------------------------------------------------------------
-    pc2ls_params_file = ReplaceString(
-        source_file=pc2ls_params_file,
-        replacements={
-            "<namespace>": namespace,
-        },
-    )
-
-    configured_pc2ls_params = ParameterFile(
-        RewrittenYaml(
-            source_file=pc2ls_params_file,
-            root_key="",
-            param_rewrites={"use_sim_time": use_sim_time},
-            convert_types=True,
-        ),
-        allow_substs=True,
-    )
 
     # --------------------------------------------------------------------------
-    # pointcloud_crop_box — global scope (no namespace), same as before.
-    # --------------------------------------------------------------------------
-    pointcloud_crop_box_node = Node(
-        condition=IfCondition(
-            PythonExpression(["'", observation_topic_type, "' == 'pointcloud'"])
-        ),
-        package="pointcloud_crop_box",
-        executable="pointcloud_crop_box_node",
-        name="pointcloud_crop_box",
-        parameters=[
-            {
-                "input_topic": observation_topic,
-                "output_topic": observation_topic_filtered,
-                "target_frame": crop_box_target_frame,
-                "negative": True,
-                "min_x": -0.55,
-                "max_x":  0.55,
-                "min_y": -0.55,
-                "max_y":  0.55,
-                "min_z": -0.10,
-                "max_z":  0.60,
-                "visualize_bounding_box": False,
-                "use_sim_time": use_sim_time,
-            }
-        ],
-        remappings=[
-            ("/tf", "/tf"),
-            ("/tf_static", "/tf_static"),
-        ],
-        output="screen",
-    )
-
-    # --------------------------------------------------------------------------
-    # SLAM group — starts at t = 3.0 + slam_delay.
-    #
-    # slam_toolbox (via slam_launch.py) and pc2ls start here.  The lifecycle
-    # manager inside slam_launch.py will bring up slam_toolbox and it will begin
-    # publishing /panther/map only after it has processed enough scans.
+    # SLAM group — starts at t = 1.0 + slam_delay.
     # --------------------------------------------------------------------------
     slam_bringup_group = GroupAction(
         condition=IfCondition(slam),
         actions=[
             PushRosNamespace(namespace),
-
-            # pointcloud_to_laserscan feeds slam_toolbox.
-            Node(
-                condition=IfCondition(
-                    PythonExpression(["'", observation_topic_type, "' == 'pointcloud'"])
-                ),
-                package="pointcloud_to_laserscan",
-                executable="pointcloud_to_laserscan_node",
-                name="pointcloud_to_laserscan",
-                parameters=[configured_pc2ls_params],
-                remappings=[
-                    ("cloud_in", observation_topic_filtered),
-                    ("scan", namespace_scan_topic),
-                ],
-                output="screen",
-            ),
 
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(
@@ -325,32 +221,6 @@ def generate_launch_description():
     nav_bringup_group = GroupAction(
         actions=[
             PushRosNamespace(namespace),
-
-            # pc2ls for the localization (non-SLAM) path.  When slam=True this
-            # node is already running in slam_bringup_group above; launching it
-            # a second time would cause a duplicate-node conflict.  The
-            # UnlessCondition(slam) guard prevents that.
-            Node(
-                condition=IfCondition(
-                    PythonExpression(
-                        [
-                            "'",
-                            observation_topic_type,
-                            "' == 'pointcloud' and not ",
-                            slam,
-                        ]
-                    )
-                ),
-                package="pointcloud_to_laserscan",
-                executable="pointcloud_to_laserscan_node",
-                name="pointcloud_to_laserscan",
-                parameters=[configured_pc2ls_params],
-                remappings=[
-                    ("cloud_in", observation_topic_filtered),
-                    ("scan", namespace_scan_topic),
-                ],
-                output="screen",
-            ),
 
             # Nav2 component container — must exist before localization/navigation
             # launch files try to load components into it.
@@ -424,13 +294,13 @@ def generate_launch_description():
     )
 
     # --------------------------------------------------------------------------
-    # Outer gate: wait 3 s for hardware drivers / DDS to settle, then:
-    #   t = 3.0              → crop_box starts
-    #   t = 3.0 + slam_delay → slam_bringup_group starts (slam_toolbox + pc2ls)
-    #   t = 3.0 + slam_delay + nav_delay → nav_bringup_group starts
+    # Outer gate: wait 1 s for DDS to settle, then:
+    #   t = 1.0 + slam_delay             → slam_bringup_group starts
+    #   t = 1.0 + slam_delay + nav_delay → nav_bringup_group starts
     #
-    # The inner TimerAction for nav is nested inside the slam TimerAction so
-    # that nav_delay is measured from when slam actually fired, not from t=0.
+    # crop_box and pc2ls are now in sensors.launch.py and are already running
+    # before this file is called.  The inner TimerAction for nav is nested
+    # inside the slam TimerAction so nav_delay is measured from when slam fires.
     # --------------------------------------------------------------------------
     nav_timer = TimerAction(
         period=nav_delay,
@@ -457,10 +327,7 @@ def generate_launch_description():
             declare_log_level_arg,
             declare_map_arg,
             declare_namespace_arg,
-            declare_observation_topic_arg,
-            declare_observation_topic_type_arg,
             declare_params_file_arg,
-            declare_pc2ls_params_file_arg,
             declare_slam_arg,
             declare_slam_delay_arg,
             declare_nav_delay_arg,
@@ -472,8 +339,7 @@ def generate_launch_description():
             TimerAction(
                 period=1.0,
                 actions=[
-                    LogInfo(msg=["[bringup] Hardware gate elapsed — starting crop_box and SLAM timer."]),
-                    pointcloud_crop_box_node,
+                    LogInfo(msg=["[bringup] Hardware gate elapsed — starting SLAM timer."]),
                     slam_and_nav_timer,
                 ],
             ),
