@@ -20,7 +20,6 @@ from launch.actions import (
     GroupAction,
     IncludeLaunchDescription,
     SetEnvironmentVariable,
-    TimerAction,
 )
 from launch.conditions import IfCondition, UnlessCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
@@ -98,9 +97,7 @@ def generate_launch_description():
         default_value=PathJoinSubstitution([utexas_panther, "config", "pc2ls_params.yaml"]),
         description="Path to the parameters file to use for pointcloud_to_laserscan node.",
     )
-    declare_slam_arg = DeclareLaunchArgument(
-        "slam", default_value="False", description="Whether run a SLAM."
-    )
+    declare_slam_arg = DeclareLaunchArgument("slam", default_value="False", description="Whether run a SLAM.")
     declare_use_composition_arg = DeclareLaunchArgument(
         "use_composition",
         default_value="True",
@@ -128,50 +125,25 @@ def generate_launch_description():
         description="Full path to the RVIZ config file to use",
     )
 
-    # --------------------------------------------------------------------------
-    # Substitution helpers
-    # --------------------------------------------------------------------------
+    # Create our own temporary YAML files that include substitutions
     param_substitutions = {"use_sim_time": use_sim_time, "yaml_filename": map}
 
     namespace_or_default = PythonExpression(["'", namespace, "' if '", namespace, "' else 'robot'"])
     namespace_ext = PythonExpression(["'", namespace, "' + '/' if '", namespace, "' else ''"])
-
     scan_topic = PythonExpression(
         ["'scan' if '", observation_topic_type, "' == 'pointcloud' else '", observation_topic, "'"]
     )
     add_obstacle_layer = PythonExpression(
         ["'obstacle_layer,' if '", observation_topic_type, "' == 'laserscan' else ''"]
     )
-    add_voxel_layer = PythonExpression(
-        ["'voxel_layer,' if '", observation_topic_type, "' == 'pointcloud' else ''"]
-    )
+    add_voxel_layer = PythonExpression(["'voxel_layer,' if '", observation_topic_type, "' == 'pointcloud' else ''"])
 
-    # Absolute scan topic: /panther/scan
-    # pc2ls publishes here; slam_toolbox and AMCL subscribe here.
-    namespace_scan_topic = PythonExpression(
-        ["'/' + '", namespace, "' + '/scan' if '", namespace, "' else '/scan'"]
-    )
-
-    # target_frame for crop_box: e.g. panther/base_link
-    crop_box_target_frame = PythonExpression(
-        ["'", namespace, "' + '/base_link' if '", namespace, "' else 'base_link'"]
-    )
-
-    # Absolute filtered cloud topic: e.g. /ouster/points_filtered
-    # crop_box publishes here; pc2ls and costmap subscribe here.
-    observation_topic_filtered = PythonExpression(["'", observation_topic, "' + '_filtered'"])
-
-    # --------------------------------------------------------------------------
-    # nav2_params.yaml — substitute all template tokens.
-    # <observation_topic> resolves to the filtered cloud topic so costmap layers
-    # receive robot-body-cropped points.
-    # --------------------------------------------------------------------------
     params_file = ReplaceString(
         source_file=params_file,
         replacements={
             "<namespace_key>": namespace_or_default,
             "<namespace>/": namespace_ext,
-            "<observation_topic>": observation_topic_filtered,
+            "<observation_topic>": observation_topic,
             "<scan_topic>": scan_topic,
             "<obstacle_layer>,": add_obstacle_layer,
             "<voxel_layer>,": add_voxel_layer,
@@ -188,90 +160,18 @@ def generate_launch_description():
         allow_substs=True,
     )
 
-    # --------------------------------------------------------------------------
-    # pc2ls_params.yaml — substitute <namespace> token and use_sim_time.
-    # Passed only to pointcloud_to_laserscan to resolve target_frame correctly.
-    # --------------------------------------------------------------------------
-    pc2ls_params_file = ReplaceString(
-        source_file=pc2ls_params_file,
-        replacements={
-            "<namespace>": namespace,
-        },
-    )
-
-    configured_pc2ls_params = ParameterFile(
-        RewrittenYaml(
-            source_file=pc2ls_params_file,
-            root_key="",
-            param_rewrites={"use_sim_time": use_sim_time},
-            convert_types=True,
-        ),
-        allow_substs=True,
-    )
-
-    # --------------------------------------------------------------------------
-    # pointcloud_crop_box — runs OUTSIDE the namespace group.
-    #
-    # Must be at global scope (no PushRosNamespace). When run inside a namespace
-    # group the node's tf2 buffer silently fails to resolve transforms and drops
-    # all output clouds. Confirmed working via direct CLI invocation first.
-    # --------------------------------------------------------------------------
-    pointcloud_crop_box_node = Node(
-        condition=IfCondition(
-            PythonExpression(["'", observation_topic_type, "' == 'pointcloud'"])
-        ),
-        package="pointcloud_crop_box",
-        executable="pointcloud_crop_box_node",
-        name="pointcloud_crop_box",
-        # No namespace — intentionally global scope.
-        parameters=[
-            {
-                "input_topic": observation_topic,
-                "output_topic": observation_topic_filtered,
-                "target_frame": crop_box_target_frame,
-                "negative": True,
-                "min_x": -0.55,
-                "max_x":  0.55,
-                "min_y": -0.55,
-                "max_y":  0.55,
-                "min_z": -0.10,
-                "max_z":  0.60,
-                "visualize_bounding_box": False,
-                "use_sim_time": use_sim_time,
-            }
-        ],
-        remappings=[
-            ("/tf", "/tf"),
-            ("/tf_static", "/tf_static"),
-        ],
-        output="screen",
-    )
-
-    # --------------------------------------------------------------------------
-    # Node group — all nodes inherit PushRosNamespace(namespace).
-    # --------------------------------------------------------------------------
     bringup_cmd_group = GroupAction(
         [
             PushRosNamespace(namespace),
-
-            # 2. Convert filtered cloud to LaserScan for SLAM / AMCL.
-            # cloud_in  → /ouster/points_filtered  (absolute, bypasses namespace)
-            # scan      → /<namespace>/scan         (absolute, into robot namespace)
             Node(
-                condition=IfCondition(
-                    PythonExpression(["'", observation_topic_type, "' == 'pointcloud'"])
-                ),
+                condition=IfCondition(PythonExpression(["'", observation_topic_type, "' == 'pointcloud'"])),
                 package="pointcloud_to_laserscan",
                 executable="pointcloud_to_laserscan_node",
                 name="pointcloud_to_laserscan",
-                parameters=[configured_pc2ls_params],
-                remappings=[
-                    ("cloud_in", observation_topic_filtered),  # filtered cloud
-                    ("scan", namespace_scan_topic),            # /panther/scan
-                ],
+                parameters=[configured_params],
+                remappings=[("cloud_in", observation_topic)],
                 output="screen",
             ),
-
             Node(
                 condition=IfCondition(use_composition),
                 name="nav2_container",
@@ -282,9 +182,7 @@ def generate_launch_description():
                 output="screen",
             ),
             IncludeLaunchDescription(
-                PythonLaunchDescriptionSource(
-                    PathJoinSubstitution([launch_dir, "slam_launch.py"])
-                ),
+                PythonLaunchDescriptionSource(PathJoinSubstitution([launch_dir, "slam_launch.py"])),
                 condition=IfCondition(slam),
                 launch_arguments={
                     "autostart": autostart,
@@ -295,9 +193,7 @@ def generate_launch_description():
                 }.items(),
             ),
             IncludeLaunchDescription(
-                PythonLaunchDescriptionSource(
-                    PathJoinSubstitution([launch_dir, "localization_launch.py"])
-                ),
+                PythonLaunchDescriptionSource(PathJoinSubstitution([launch_dir, "localization_launch.py"])),
                 condition=UnlessCondition(slam),
                 launch_arguments={
                     "autostart": autostart,
@@ -311,9 +207,7 @@ def generate_launch_description():
                 }.items(),
             ),
             IncludeLaunchDescription(
-                PythonLaunchDescriptionSource(
-                    PathJoinSubstitution([launch_dir, "navigation_launch.py"])
-                ),
+                PythonLaunchDescriptionSource(PathJoinSubstitution([launch_dir, "navigation_launch.py"])),
                 launch_arguments={
                     "namespace": namespace,
                     "use_sim_time": use_sim_time,
@@ -366,12 +260,6 @@ def generate_launch_description():
             declare_use_sim_time_arg,
             declare_use_rviz_arg,
             declare_rviz_config_file_cmd,
-            TimerAction(
-                period=1.0,
-                actions=[
-                    pointcloud_crop_box_node,
-                    bringup_cmd_group,
-                ],
-            ),
+            bringup_cmd_group,
         ]
     )
