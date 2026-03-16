@@ -37,6 +37,8 @@ from nav2_common.launch import ReplaceString, RewrittenYaml
 def generate_launch_description():
     husarion_ugv_navigation = FindPackageShare("husarion_ugv_navigation")
     launch_dir = PathJoinSubstitution([husarion_ugv_navigation, "launch"])
+    utexas_panther = FindPackageShare("utexas_panther")
+    utexas_panther_launch_dir = PathJoinSubstitution([utexas_panther, "launch"])
 
     autostart = LaunchConfiguration("autostart")
     log_level = LaunchConfiguration("log_level")
@@ -86,7 +88,7 @@ def generate_launch_description():
     declare_params_file_arg = DeclareLaunchArgument(
         "params_file",
         default_value=PathJoinSubstitution(
-            [husarion_ugv_navigation, "config", "nav2_params.yaml"]
+            [utexas_panther, "config", "nav2_params.yaml"]
         ),
         description="Path to the parameters file to use for all nav2 related nodes",
     )
