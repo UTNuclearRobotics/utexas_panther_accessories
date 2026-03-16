@@ -164,15 +164,6 @@ def generate_launch_description():
         [
             PushRosNamespace(namespace),
             Node(
-                condition=IfCondition(PythonExpression(["'", observation_topic_type, "' == 'pointcloud'"])),
-                package="pointcloud_to_laserscan",
-                executable="pointcloud_to_laserscan_node",
-                name="pointcloud_to_laserscan",
-                parameters=[configured_params],
-                remappings=[("cloud_in", observation_topic)],
-                output="screen",
-            ),
-            Node(
                 condition=IfCondition(use_composition),
                 name="nav2_container",
                 package="rclcpp_components",
@@ -217,6 +208,15 @@ def generate_launch_description():
                     "use_respawn": use_respawn,
                     "container_name": "nav2_container",
                 }.items(),
+            ),
+            Node(
+                condition=IfCondition(PythonExpression(["'", observation_topic_type, "' == 'pointcloud'"])),
+                package="pointcloud_to_laserscan",
+                executable="pointcloud_to_laserscan_node",
+                name="pointcloud_to_laserscan",
+                parameters=[configured_params],
+                remappings=[("cloud_in", observation_topic)],
+                output="screen",
             ),
             Node(
                 condition=IfCondition(slam),
