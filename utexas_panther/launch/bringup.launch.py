@@ -134,12 +134,12 @@ def generate_launch_description():
 
     robot_bounding_box = {
         "panther": {
-            "min_x": -0.45,
-            "min_y": -0.47,
+            "min_x": -0.75,
+            "min_y": -0.95,
             "min_z": 0.05,
-            "max_x": 0.45,
-            "max_y": 0.47,
-            "max_z": 0.5,
+            "max_x": 0.8,
+            "max_y": 0.95,
+            "max_z": 0.65,
         },
         "lynx": {
             "min_x": -0.38,
