@@ -68,7 +68,7 @@
       goal_checker:
         plugin: nav2_controller::SimpleGoalChecker
         stateful: true
-        xy_goal_tolerance: 1.0
+        xy_goal_tolerance: 1.5
         yaw_goal_tolerance: 3.14159
 
       # MPPI controller
@@ -199,7 +199,7 @@
             inf_is_valid: false
           laserscan:
             data_type: LaserScan
-            topic: <observation_topic>
+            topic: <scan_topic>
             marking: true
             clearing: true
             obstacle_range: 5.0
@@ -256,7 +256,7 @@
             inf_is_valid: false
           laserscan:
             data_type: LaserScan
-            topic: <observation_topic>
+            topic: <scan_topic>
             marking: true
             clearing: true
             obstacle_range: 10.0
@@ -331,7 +331,7 @@
       waypoint_task_executor_plugin: wait_at_waypoint
       wait_at_waypoint:
         plugin: nav2_waypoint_follower::WaitAtWaypoint
-        waypoint_pause_duration: 5
+        waypoint_pause_duration: 0
 
   velocity_smoother:
     ros__parameters:
