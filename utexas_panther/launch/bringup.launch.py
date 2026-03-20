@@ -132,14 +132,6 @@ def generate_launch_description():
         ]
     )
 
-    stvl_layer = PythonExpression(
-        [
-            "'stvl_pointcloud_layer' if '",
-            observation_topic_type,
-            "' == 'pointcloud' else 'stvl_laserscan_layer'",
-        ]
-    )
-
     robot_bounding_box = {
         "panther": {
             "min_x": -0.45,
@@ -176,7 +168,6 @@ def generate_launch_description():
                 "<observation_topic>": observation_topic,
                 "<observation_topic_type>": observation_topic_type,
                 "<scan_topic>": scan_topic,
-                "<stvl_layer>": stvl_layer,
             },
             condition=IfCondition(
                 PythonExpression(["'", robot_model, f"' == '{robot_model_name}'"])

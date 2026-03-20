@@ -172,28 +172,20 @@
 
         footprint: '[[<min_x>, <min_y>], [<min_x>, <max_y>], [<max_x>, <max_y>], [<max_x>, <min_y>]]'
 
-        plugins: [stvl_layer, inflation_layer]
+        plugins: [static_layer, obstacle_layer, inflation_layer]
         inflation_layer:
           plugin: nav2_costmap_2d::InflationLayer
           cost_scaling_factor: 1.3
           inflation_radius: 1.5
 
-        stvl_layer:
-          plugin: "spatio_temporal_voxel_layer/SpatioTemporalVoxelLayer"
+        static_layer:
+          plugin: nav2_costmap_2d::StaticLayer
+          map_subscribe_transient_local: true
+          map_topic: /<namespace>/map
+
+        obstacle_layer:
+          plugin: nav2_costmap_2d::ObstacleLayer
           enabled: true
-          voxel_decay: 1.0
-          decay_model: 0
-          voxel_size: 0.05
-          track_unknown_space: true
-          unknown_threshold: 15
-          mark_threshold: 0
-          update_footprint_enabled: true
-          combination_method: 1
-          origin_z: 0.0
-          publish_voxel_map: true
-          transform_tolerance: 0.2
-          mapping_mode: false
-          map_save_duration: 60.0
           observation_sources: <observation_topic_type>
           pointcloud:
             data_type: PointCloud2
@@ -201,40 +193,20 @@
             marking: true
             clearing: true
             obstacle_range: 5.0
+            raytrace_range: 6.5
             min_obstacle_height: 0.1
             max_obstacle_height: 2.0
-            expected_update_rate: 0.0
-            observation_persistence: 0.0
             inf_is_valid: false
-            filter: "voxel"
-            voxel_min_points: 2
-            clear_after_reading: true
-            max_z: 7.0
-            min_z: 0.2
-            vertical_fov_angle: 0.7401
-            horizontal_fov_angle: 6.2832
-            decay_acceleration: 15.0
-            model_type: 0
           laserscan:
             data_type: LaserScan
             topic: <observation_topic>
             marking: true
             clearing: true
             obstacle_range: 5.0
+            raytrace_range: 6.5
             min_obstacle_height: 0.1
             max_obstacle_height: 2.0
-            expected_update_rate: 0.0
-            observation_persistence: 0.0
             inf_is_valid: false
-            filter: "voxel"
-            voxel_min_points: 2
-            clear_after_reading: true
-            max_z: 7.0
-            min_z: 0.1
-            vertical_fov_angle: 0.05      # was 0.8745 — it's a 2D slice, not full 3D FOV
-            horizontal_fov_angle: 6.2832  # was 1.048
-            decay_acceleration: 15.0
-            model_type: 0
 
 
   global_costmap:
@@ -256,7 +228,7 @@
 
         footprint: '[[<min_x>, <min_y>], [<min_x>, <max_y>], [<max_x>, <max_y>], [<max_x>, <min_y>]]'
 
-        plugins: [static_layer, stvl_layer, inflation_layer]
+        plugins: [static_layer, obstacle_layer, inflation_layer]
         inflation_layer:
           plugin: nav2_costmap_2d::InflationLayer
           cost_scaling_factor: 1.5
@@ -268,22 +240,9 @@
           map_subscribe_transient_local: true
           map_topic: /<namespace>/map
 
-        stvl_layer:
-          plugin: "spatio_temporal_voxel_layer/SpatioTemporalVoxelLayer"
+        obstacle_layer:
+          plugin: nav2_costmap_2d::ObstacleLayer
           enabled: true
-          voxel_decay: 1.0
-          decay_model: 0
-          voxel_size: 0.05
-          track_unknown_space: true
-          unknown_threshold: 15
-          mark_threshold: 0
-          update_footprint_enabled: true
-          combination_method: 1
-          origin_z: 0.0
-          publish_voxel_map: true
-          transform_tolerance: 0.2
-          mapping_mode: false
-          map_save_duration: 60.0
           observation_sources: <observation_topic_type>
           pointcloud:
             data_type: PointCloud2
@@ -291,40 +250,20 @@
             marking: true
             clearing: true
             obstacle_range: 10.0
+            raytrace_range: 12.0
             min_obstacle_height: 0.1
             max_obstacle_height: 2.0
-            expected_update_rate: 0.0
-            observation_persistence: 0.0
             inf_is_valid: false
-            filter: "voxel"
-            voxel_min_points: 2
-            clear_after_reading: true
-            max_z: 7.0
-            min_z: 0.2
-            vertical_fov_angle: 0.7401
-            horizontal_fov_angle: 6.2832
-            decay_acceleration: 15.0
-            model_type: 0
           laserscan:
             data_type: LaserScan
             topic: <observation_topic>
             marking: true
             clearing: true
             obstacle_range: 10.0
+            raytrace_range: 12.0
             min_obstacle_height: 0.1
             max_obstacle_height: 2.0
-            expected_update_rate: 0.0
-            observation_persistence: 0.0
             inf_is_valid: false
-            filter: "voxel"
-            voxel_min_points: 2
-            clear_after_reading: true
-            max_z: 7.0
-            min_z: 0.1
-            vertical_fov_angle: 0.05
-            horizontal_fov_angle: 6.2832
-            decay_acceleration: 15.0
-            model_type: 0
 
 
   planner_server:
