@@ -172,7 +172,7 @@
 
         footprint: '[[<min_x>, <min_y>], [<min_x>, <max_y>], [<max_x>, <max_y>], [<max_x>, <min_y>]]'
 
-        plugins: [static_layer, obstacle_layer, inflation_layer]
+        plugins: [obstacle_layer, inflation_layer]
         inflation_layer:
           plugin: nav2_costmap_2d::InflationLayer
           cost_scaling_factor: 1.3
