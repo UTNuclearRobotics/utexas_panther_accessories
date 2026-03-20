@@ -200,7 +200,7 @@
             topic: <observation_topic>_filtered
             marking: true
             clearing: true
-            obstacle_range: 3.0
+            obstacle_range: 5.0
             min_obstacle_height: 0.1
             max_obstacle_height: 2.0
             expected_update_rate: 0.0
@@ -211,8 +211,8 @@
             clear_after_reading: true
             max_z: 7.0
             min_z: 0.2
-            vertical_fov_angle: 0.8745
-            horizontal_fov_angle: 1.048
+            vertical_fov_angle: 0.7401
+            horizontal_fov_angle: 6.2832
             decay_acceleration: 15.0
             model_type: 0
           laserscan:
@@ -220,7 +220,7 @@
             topic: <observation_topic>
             marking: true
             clearing: true
-            obstacle_range: 3.0
+            obstacle_range: 5.0
             min_obstacle_height: 0.1
             max_obstacle_height: 2.0
             expected_update_rate: 0.0
@@ -231,8 +231,8 @@
             clear_after_reading: true
             max_z: 7.0
             min_z: 0.1
-            vertical_fov_angle: 0.8745
-            horizontal_fov_angle: 1.048
+            vertical_fov_angle: 0.05      # was 0.8745 — it's a 2D slice, not full 3D FOV
+            horizontal_fov_angle: 6.2832  # was 1.048
             decay_acceleration: 15.0
             model_type: 0
 
@@ -290,7 +290,7 @@
             topic: <observation_topic>_filtered
             marking: true
             clearing: true
-            obstacle_range: 8.0
+            obstacle_range: 10.0
             min_obstacle_height: 0.1
             max_obstacle_height: 2.0
             expected_update_rate: 0.0
@@ -301,8 +301,8 @@
             clear_after_reading: true
             max_z: 7.0
             min_z: 0.2
-            vertical_fov_angle: 0.8745
-            horizontal_fov_angle: 1.048
+            vertical_fov_angle: 0.7401
+            horizontal_fov_angle: 6.2832
             decay_acceleration: 15.0
             model_type: 0
           laserscan:
@@ -310,7 +310,7 @@
             topic: <observation_topic>
             marking: true
             clearing: true
-            obstacle_range: 8.0
+            obstacle_range: 10.0
             min_obstacle_height: 0.1
             max_obstacle_height: 2.0
             expected_update_rate: 0.0
@@ -321,8 +321,8 @@
             clear_after_reading: true
             max_z: 7.0
             min_z: 0.1
-            vertical_fov_angle: 0.8745
-            horizontal_fov_angle: 1.048
+            vertical_fov_angle: 0.05
+            horizontal_fov_angle: 6.2832
             decay_acceleration: 15.0
             model_type: 0
 
@@ -448,8 +448,8 @@
 
       laser_model_type: likelihood_field
       laser_likelihood_max_dist: 2.0
-      laser_max_range: 12.0
-      laser_min_range: -1.0
+      laser_max_range: 50.0
+      laser_min_range: 0.3
 
       max_beams: 60
 
