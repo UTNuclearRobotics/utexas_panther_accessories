@@ -275,12 +275,12 @@
       GridBased:
         plugin: nav2_smac_planner/SmacPlanner2D
         tolerance: 0.125
-        downsample_costmap: false
-        downsampling_factor: 1
+        downsample_costmap: true
+        downsampling_factor: 2
         allow_unknown: true
-        max_iterations: 600000
-        max_on_approach_iterations: 500
-        max_planning_time: 3.0
+        max_iterations: 2000000
+        max_on_approach_iterations: 1000
+        max_planning_time: 10.0
         cost_travel_multiplier: 2.5
         use_final_approach_orientation: false
         smoother:
