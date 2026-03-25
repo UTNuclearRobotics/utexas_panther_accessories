@@ -39,6 +39,7 @@ def generate_launch_description():
     launch_dir = PathJoinSubstitution([husarion_ugv_navigation, "launch"])
     utexas_panther = FindPackageShare("utexas_panther")
     utexas_panther_launch_dir = PathJoinSubstitution([utexas_panther, "launch"])
+    patchworkpp_share = FindPackageShare("patchworkpp")
 
     autostart = LaunchConfiguration("autostart")
     log_level = LaunchConfiguration("log_level")
@@ -204,19 +205,19 @@ def generate_launch_description():
                 parameters=[configured_params],
                 output="screen",
             ),
-            Node(
+            IncludeLaunchDescription(
+                PythonLaunchDescriptionSource(
+                    PathJoinSubstitution([patchworkpp_share, "launch", "patchworkpp.launch.py"])
+                ),
                 condition=IfCondition(
                     PythonExpression(["'", observation_topic_type, "' == 'pointcloud'"])
                 ),
-                package="patchworkpp",
-                executable="patchworkpp_node",
-                name="patchworkpp",
-                parameters=[configured_params],
-                remappings=[
-                    ("cloud_in", observation_topic_filtered),    # input: crop_box output
-                    ("nonground", observation_topic_nonground),  # output: to VoxelLayer + laserscan
-                ],
-                output="screen",
+                launch_arguments={
+                    "cloud_topic": observation_topic_filtered,
+                    "use_sim_time": use_sim_time,
+                    "visualize": "false",
+                    "base_frame": "os_lidar",   # match target_frame in your pointcloud_to_laserscan config
+                }.items(),
             ),
             Node(
                 condition=IfCondition(
