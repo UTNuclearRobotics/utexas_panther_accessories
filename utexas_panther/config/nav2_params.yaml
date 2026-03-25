@@ -421,7 +421,7 @@
       odom_frame: panther/odom
       map_frame: panther/map
       base_frame: panther/base_link
-      scan_topic: <scan_topic>
+      scan_topic: scan
       mode: mapping
 
       debug_logging: false

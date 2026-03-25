@@ -151,7 +151,7 @@ def generate_launch_description():
         }
     }
     observation_topic_filtered = PythonExpression(
-        ["'", observation_topic, "_filtered'"],
+        ["'", observation_topic, "'"],
     )
     def override_params_file(robot_model_name):
         bounding_box = robot_bounding_box[robot_model_name]
@@ -191,16 +191,16 @@ def generate_launch_description():
     bringup_cmd_group = GroupAction(
         [
             PushRosNamespace(namespace),
-            Node(
-                condition=IfCondition(
-                    PythonExpression(["'", observation_topic_type, "' == 'pointcloud'"])
-                ),
-                package="pointcloud_crop_box",
-                executable="pointcloud_crop_box_node",
-                name="pointcloud_crop_box",
-                parameters=[configured_params],
-                output="screen",
-            ),
+            # Node(
+            #     condition=IfCondition(
+            #         PythonExpression(["'", observation_topic_type, "' == 'pointcloud'"])
+            #     ),
+            #     package="pointcloud_crop_box",
+            #     executable="pointcloud_crop_box_node",
+            #     name="pointcloud_crop_box",
+            #     parameters=[configured_params],
+            #     output="screen",
+            # ),
             Node(
                 condition=IfCondition(
                     PythonExpression(["'", observation_topic_type, "' == 'pointcloud'"])
@@ -212,15 +212,15 @@ def generate_launch_description():
                 remappings=[("cloud_in", observation_topic_filtered)],
                 output="screen",
             ),
-            Node(
-                condition=IfCondition(use_composition),
-                name="nav2_container",
-                package="rclcpp_components",
-                executable="component_container_isolated",
-                parameters=[configured_params, {"autostart": autostart}],
-                arguments=["--ros-args", "--log-level", log_level],
-                output="screen",
-            ),
+            # Node(
+            #     condition=IfCondition(use_composition),
+            #     name="nav2_container",
+            #     package="rclcpp_components",
+            #     executable="component_container_isolated",
+            #     parameters=[configured_params, {"autostart": autostart}],
+            #     arguments=["--ros-args", "--log-level", log_level],
+            #     output="screen",
+            # ),
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(
                     PathJoinSubstitution([launch_dir, "slam_launch.py"])
@@ -234,45 +234,45 @@ def generate_launch_description():
                     "use_sim_time": use_sim_time,
                 }.items(),
             ),
-            IncludeLaunchDescription(
-                PythonLaunchDescriptionSource(
-                    PathJoinSubstitution([launch_dir, "localization_launch.py"])
-                ),
-                condition=UnlessCondition(slam),
-                launch_arguments={
-                    "autostart": autostart,
-                    "container_name": "nav2_container",
-                    "map": map,
-                    "namespace": namespace,
-                    "params_file": params_file,
-                    "use_composition": use_composition,
-                    "use_respawn": use_respawn,
-                    "use_sim_time": use_sim_time,
-                }.items(),
-            ),
-            IncludeLaunchDescription(
-                PythonLaunchDescriptionSource(
-                    PathJoinSubstitution([utexas_panther_launch_dir, "navigation_launch.py"])
-                ),
-                launch_arguments={
-                    "namespace": namespace,
-                    "use_sim_time": use_sim_time,
-                    "autostart": autostart,
-                    "params_file": params_file,
-                    "use_composition": use_composition,
-                    "use_respawn": use_respawn,
-                    "container_name": "nav2_container",
-                }.items(),
-            ),
-            Node(
-                condition=IfCondition(slam),
-                name="map_autosaver",
-                package="husarion_ugv_navigation",
-                executable="map_autosaver_node",
-                parameters=[configured_params],
-                arguments=["--ros-args", "--log-level", log_level],
-                output="screen",
-            ),
+            # IncludeLaunchDescription(
+            #     PythonLaunchDescriptionSource(
+            #         PathJoinSubstitution([launch_dir, "localization_launch.py"])
+            #     ),
+            #     condition=UnlessCondition(slam),
+            #     launch_arguments={
+            #         "autostart": autostart,
+            #         "container_name": "nav2_container",
+            #         "map": map,
+            #         "namespace": namespace,
+            #         "params_file": params_file,
+            #         "use_composition": use_composition,
+            #         "use_respawn": use_respawn,
+            #         "use_sim_time": use_sim_time,
+            #     }.items(),
+            # ),
+            # IncludeLaunchDescription(
+            #     PythonLaunchDescriptionSource(
+            #         PathJoinSubstitution([utexas_panther_launch_dir, "navigation_launch.py"])
+            #     ),
+            #     launch_arguments={
+            #         "namespace": namespace,
+            #         "use_sim_time": use_sim_time,
+            #         "autostart": autostart,
+            #         "params_file": params_file,
+            #         "use_composition": use_composition,
+            #         "use_respawn": use_respawn,
+            #         "container_name": "nav2_container",
+            #     }.items(),
+            # ),
+            # Node(
+            #     condition=IfCondition(slam),
+            #     name="map_autosaver",
+            #     package="husarion_ugv_navigation",
+            #     executable="map_autosaver_node",
+            #     parameters=[configured_params],
+            #     arguments=["--ros-args", "--log-level", log_level],
+            #     output="screen",
+            # ),
         ]
     )
 
