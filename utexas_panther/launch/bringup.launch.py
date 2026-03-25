@@ -154,9 +154,7 @@ def generate_launch_description():
     observation_topic_filtered = PythonExpression(
         ["'", observation_topic, "_filtered'"],
     )
-    observation_topic_nonground = PythonExpression(
-        ["'", observation_topic, "_nonground'"],
-    )
+    nonground_topic = "/patchworkpp/nonground"
     def override_params_file(robot_model_name):
         bounding_box = robot_bounding_box[robot_model_name]
         params = ReplaceString(
@@ -172,6 +170,7 @@ def generate_launch_description():
                 "<observation_topic>": observation_topic,
                 "<observation_topic_type>": observation_topic_type,
                 "<scan_topic>": scan_topic,
+                "<nonground_topic>": nonground_topic,
             },
             condition=IfCondition(
                 PythonExpression(["'", robot_model, f"' == '{robot_model_name}'"])
@@ -227,7 +226,7 @@ def generate_launch_description():
                 executable="pointcloud_to_laserscan_node",
                 name="pointcloud_to_laserscan",
                 parameters=[configured_params],
-                remappings=[("cloud_in", observation_topic_nonground)],
+                remappings=[("cloud_in", nonground_topic)],
                 output="screen",
             ),
             Node(

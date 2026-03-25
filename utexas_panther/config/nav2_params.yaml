@@ -195,7 +195,7 @@
           mark_threshold: 0
           pointcloud:
             data_type: PointCloud2
-            topic: <observation_topic>_nonground
+            topic: <nonground_topic>
             observation_persistence: 0.0
             expected_update_rate: 15.0
             marking: true
@@ -258,7 +258,7 @@
           observation_sources: <observation_topic_type>
           pointcloud:
             data_type: PointCloud2
-            topic: <observation_topic>_nonground
+            topic: <nonground_topic>
             marking: true
             clearing: true
             obstacle_max_range: 10.0
