@@ -45,3 +45,16 @@ source /opt/ros/humble/setup.bash
 rosdep install --from-paths src --ignore-src -r -y
 colcon build
 ```
+If using Slam
+
+```
+ros2 launch utexas_panther bringup.launch.py slam:=True
+```
+
+Ouster
+
+Make sure you run the following line to run the ouster
+
+```
+ros2 launch ouster_ros sensor.launch.xml     sensor_hostname:=169.254.175.115     timestamp_mode:=TIME_FROM_ROS_TIME     viz:=false
+```
