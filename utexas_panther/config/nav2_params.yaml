@@ -46,7 +46,7 @@
     ros__parameters:
       use_sim_time: false
 
-      controller_frequency: 10.0
+      controller_frequency: 20.0
       odom_topic: <namespace>/odometry/filtered
       costmap_update_timeout: 0.5
 
@@ -75,8 +75,8 @@
       controller_plugins: [FollowPath]
       FollowPath:
         plugin: nav2_mppi_controller::MPPIController
-        time_steps: 40
-        model_dt: 0.1
+        time_steps: 60
+        model_dt: 0.05
         batch_size: 800
         vx_std: 0.4
         vy_std: 0.0
@@ -86,7 +86,7 @@
         vy_max: 0.0
         wz_max: 1.0
         iteration_count: 1
-        prune_distance: 2.5
+        prune_distance: 5.0
         transform_tolerance: 0.1
         temperature: 0.3
         gamma: 0.015
@@ -160,8 +160,8 @@
         robot_base_frame: <namespace>/base_link
         transform_tolerance: 0.1
 
-        update_frequency: 5.0
-        publish_frequency: 2.0
+        update_frequency: 2.0
+        publish_frequency: 1.0
 
         width: 15
         height: 15
@@ -175,8 +175,8 @@
         plugins: [obstacle_layer, inflation_layer]
         inflation_layer:
           plugin: nav2_costmap_2d::InflationLayer
-          cost_scaling_factor: 1.3
-          inflation_radius: 1.5
+          cost_scaling_factor: 3.5
+          inflation_radius: 2.0
 
         static_layer:
           plugin: nav2_costmap_2d::StaticLayer
@@ -231,8 +231,8 @@
         plugins: [static_layer, obstacle_layer, inflation_layer]
         inflation_layer:
           plugin: nav2_costmap_2d::InflationLayer
-          cost_scaling_factor: 1.5
-          inflation_radius: 1.5
+          cost_scaling_factor: 3.5
+          inflation_radius: 2.0
           inflate_around_unknown: false
           inflate_unknown: false
         static_layer:
