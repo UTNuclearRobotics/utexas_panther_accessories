@@ -154,7 +154,6 @@ def generate_launch_description():
     observation_topic_filtered = PythonExpression(
         ["'", observation_topic, "_filtered'"],
     )
-    nonground_topic = "/patchworkpp/nonground"
     def override_params_file(robot_model_name):
         bounding_box = robot_bounding_box[robot_model_name]
         params = ReplaceString(
@@ -170,7 +169,6 @@ def generate_launch_description():
                 "<observation_topic>": observation_topic,
                 "<observation_topic_type>": observation_topic_type,
                 "<scan_topic>": scan_topic,
-                "<nonground_topic>": nonground_topic,
             },
             condition=IfCondition(
                 PythonExpression(["'", robot_model, f"' == '{robot_model_name}'"])
@@ -204,20 +202,6 @@ def generate_launch_description():
                 parameters=[configured_params],
                 output="screen",
             ),
-            IncludeLaunchDescription(
-                PythonLaunchDescriptionSource(
-                    PathJoinSubstitution([patchworkpp_share, "launch", "patchworkpp.launch.py"])
-                ),
-                condition=IfCondition(
-                    PythonExpression(["'", observation_topic_type, "' == 'pointcloud'"])
-                ),
-                launch_arguments={
-                    "cloud_topic": observation_topic_filtered,
-                    "use_sim_time": use_sim_time,
-                    "visualize": "false",
-                    "base_frame": "os_lidar",   # match target_frame in your pointcloud_to_laserscan config
-                }.items(),
-            ),
             Node(
                 condition=IfCondition(
                     PythonExpression(["'", observation_topic_type, "' == 'pointcloud'"])
@@ -226,7 +210,7 @@ def generate_launch_description():
                 executable="pointcloud_to_laserscan_node",
                 name="pointcloud_to_laserscan",
                 parameters=[configured_params],
-                remappings=[("cloud_in", nonground_topic)],
+                remappings=[("cloud_in", observation_topic_filtered,)],
                 output="screen",
             ),
             Node(

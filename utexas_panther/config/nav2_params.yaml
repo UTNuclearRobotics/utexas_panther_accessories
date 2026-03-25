@@ -195,7 +195,7 @@
           mark_threshold: 0
           pointcloud:
             data_type: PointCloud2
-            topic: <nonground_topic>
+            topic: <observation_topic>_filtered
             observation_persistence: 0.0
             expected_update_rate: 15.0
             marking: true
@@ -258,7 +258,7 @@
           observation_sources: <observation_topic_type>
           pointcloud:
             data_type: PointCloud2
-            topic: <nonground_topic>
+            topic: <observation_topic>_filtered
             marking: true
             clearing: true
             obstacle_max_range: 10.0
@@ -539,19 +539,3 @@
       min_z: <min_z>
       max_z: <max_z>
       negative: true
-
-  patchworkpp:
-    ros__parameters:
-      use_sim_time: false
-      sensor_height: 0.6         # MEASURE THIS — lidar height above ground in meters
-      num_iter: 3                 # ground estimation iterations
-      num_lpr: 20                 # lowest point representative count
-      num_min_pts: 10             # min points per sector to estimate ground
-      th_seeds: 0.4               # seed height threshold above lowest point
-      th_dist: 0.135                # max distance from ground plane to be labeled ground
-      max_range: 80.0
-      min_range: 0.5              # ignore near-field points (robot body shadow)
-      uprightness_thr: 0.5        # normal vector uprightness threshold
-      adaptive_seed_selection_margin: -1.1
-      RNR_ver_angle_thr: -15.0    # vertical angle threshold for range-normal residual
-      verbose: false

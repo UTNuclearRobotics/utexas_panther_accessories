@@ -17,6 +17,8 @@ from launch_ros.actions import Node
 
 
 def launch_setup(context, *args, **kwargs):
+    patchworkpp_share = FindPackageShare("patchworkpp")
+
     # ros2 launch depthai_ros_driver camera.launch.py
     depthai_camera = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
@@ -32,6 +34,18 @@ def launch_setup(context, *args, **kwargs):
         launch_arguments={
             "sensor_hostname": "192.168.1.100",
             "viz": "false",
+        }.items(),
+    )
+
+    patchworkpp = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            PathJoinSubstitution([patchworkpp_share, "launch", "patchworkpp.launch.py"])
+        ),
+        launch_arguments={
+            "cloud_topic": "/ouster/points",
+            "use_sim_time": "false",
+            "visualize": "false",
+            "base_frame": "os_sensor",   # own frame — no TF publishing
         }.items(),
     )
 
@@ -130,6 +144,7 @@ def launch_setup(context, *args, **kwargs):
     return [
         depthai_camera,
         ouster_lidar,
+        patchworkpp,
         goal_relay,
         twist_stamper,
         initial_pose_relay,
