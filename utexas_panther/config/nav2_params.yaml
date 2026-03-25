@@ -194,7 +194,7 @@
             clearing: true
             obstacle_range: 5.0
             raytrace_range: 6.5
-            min_obstacle_height: 0.1
+            min_obstacle_height: 0.15
             max_obstacle_height: 2.0
             inf_is_valid: false
           laserscan:
@@ -204,7 +204,7 @@
             clearing: true
             obstacle_range: 5.0
             raytrace_range: 6.5
-            min_obstacle_height: 0.1
+            min_obstacle_height: 0.15
             max_obstacle_height: 2.0
             inf_is_valid: false
 
@@ -251,7 +251,7 @@
             clearing: true
             obstacle_range: 10.0
             raytrace_range: 12.0
-            min_obstacle_height: 0.1
+            min_obstacle_height: 0.15
             max_obstacle_height: 2.0
             inf_is_valid: false
           laserscan:
@@ -261,7 +261,7 @@
             clearing: true
             obstacle_range: 10.0
             raytrace_range: 12.0
-            min_obstacle_height: 0.1
+            min_obstacle_height: 0.15
             max_obstacle_height: 2.0
             inf_is_valid: false
 
@@ -502,7 +502,7 @@
   pointcloud_to_laserscan:
     ros__parameters:
       use_sim_time: false
-      min_height: 0.1
+      min_height: 0.15
       max_height: 2.0
       angle_min: -3.14
       angle_max: 3.14
