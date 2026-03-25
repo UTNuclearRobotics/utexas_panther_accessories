@@ -45,6 +45,15 @@ source /opt/ros/humble/setup.bash
 rosdep install --from-paths src --ignore-src -r -y
 colcon build
 ```
+
+Before Running the Stack
+
+```
+source /opt/ros/jazzy/setup.bash
+export ROBOT_NAMESPACE=panther
+export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+```
+
 If using Slam
 
 ```
@@ -57,4 +66,10 @@ Make sure you run the following line to run the ouster
 
 ```
 ros2 launch ouster_ros sensor.launch.xml     sensor_hostname:=169.254.175.115     timestamp_mode:=TIME_FROM_ROS_TIME     viz:=false
+```
+
+And also create a tf transform between the base and lidar
+
+```
+ros2 run tf2_ros static_transform_publisher 0 0 0.5 0 0 0 panther/base_link os_sensor
 ```
