@@ -78,10 +78,10 @@
         time_steps: 60
         model_dt: 0.05
         batch_size: 1200
-        vx_std: 0.4
+        vx_std: 0.6
         vy_std: 0.0
         wz_std: 0.3
-        vx_max: 0.8
+        vx_max: 1.0
         vx_min: -0.5
         vy_max: 0.0
         wz_max: 1.0
@@ -118,7 +118,7 @@
         CostCritic:
           enabled: true
           cost_power: 1
-          cost_weight: 5.0
+          cost_weight: 3.0
           critical_cost: 200.0
           consider_footprint: true
           collision_cost: 1000000.0
@@ -135,7 +135,7 @@
         PathFollowCritic:
           enabled: true
           cost_power: 1
-          cost_weight: 3.0
+          cost_weight: 5.0
           offset_from_furthest: 5
           threshold_to_consider: 3.2
         PathAngleCritic:
@@ -160,8 +160,8 @@
         robot_base_frame: <namespace>/base_link
         transform_tolerance: 0.1
 
-        update_frequency: 2.0
-        publish_frequency: 1.0
+        update_frequency: 10.0
+        publish_frequency: 5.0
 
         width: 15
         height: 15
@@ -184,29 +184,41 @@
           map_topic: /<namespace>/map
 
         obstacle_layer:
-          plugin: nav2_costmap_2d::ObstacleLayer
+          plugin: nav2_costmap_2d::VoxelLayer
           enabled: true
           observation_sources: <observation_topic_type>
+          combination_method: 0
+          origin_z: 0.0
+          z_resolution: 0.05
+          z_voxels: 40
+          unknown_threshold: 39
+          mark_threshold: 0
           pointcloud:
             data_type: PointCloud2
-            topic: <observation_topic>_filtered
+            topic: <observation_topic>_nonground
+            observation_persistence: 0.0
+            expected_update_rate: 15.0
             marking: true
             clearing: true
-            obstacle_range: 5.0
-            raytrace_range: 6.5
-            min_obstacle_height: 0.15
+            obstacle_max_range: 5.0
+            raytrace_max_range: 6.5
+            obstacle_min_range: 0.3
+            raytrace_min_range: 0.3
+            min_obstacle_height: 0.135
             max_obstacle_height: 2.0
-            inf_is_valid: false
+            inf_is_valid: true
           laserscan:
             data_type: LaserScan
             topic: <scan_topic>
             marking: true
             clearing: true
-            obstacle_range: 5.0
-            raytrace_range: 6.5
-            min_obstacle_height: 0.15
+            obstacle_max_range: 5.0
+            raytrace_max_range: 6.5
+            obstacle_min_range: 0.3
+            raytrace_min_range: 0.3
+            min_obstacle_height: 0.135
             max_obstacle_height: 2.0
-            inf_is_valid: false
+            inf_is_valid: true
 
 
   global_costmap:
@@ -246,12 +258,12 @@
           observation_sources: <observation_topic_type>
           pointcloud:
             data_type: PointCloud2
-            topic: <observation_topic>_filtered
+            topic: <observation_topic>_nonground
             marking: true
             clearing: true
-            obstacle_range: 10.0
-            raytrace_range: 12.0
-            min_obstacle_height: 0.15
+            obstacle_max_range: 10.0
+            raytrace_max_range: 12.0
+            min_obstacle_height: 0.135
             max_obstacle_height: 2.0
             inf_is_valid: false
           laserscan:
@@ -259,9 +271,9 @@
             topic: <scan_topic>
             marking: true
             clearing: true
-            obstacle_range: 10.0
-            raytrace_range: 12.0
-            min_obstacle_height: 0.15
+            obstacle_max_range: 10.0
+            raytrace_max_range: 12.0
+            min_obstacle_height: 0.135
             max_obstacle_height: 2.0
             inf_is_valid: false
 
@@ -502,7 +514,7 @@
   pointcloud_to_laserscan:
     ros__parameters:
       use_sim_time: false
-      min_height: 0.15
+      min_height: 0.1
       max_height: 2.0
       angle_min: -3.14
       angle_max: 3.14
@@ -527,3 +539,19 @@
       min_z: <min_z>
       max_z: <max_z>
       negative: true
+
+  patchworkpp:
+    ros__parameters:
+      use_sim_time: false
+      sensor_height: 0.6         # MEASURE THIS — lidar height above ground in meters
+      num_iter: 3                 # ground estimation iterations
+      num_lpr: 20                 # lowest point representative count
+      num_min_pts: 10             # min points per sector to estimate ground
+      th_seeds: 0.4               # seed height threshold above lowest point
+      th_dist: 0.135                # max distance from ground plane to be labeled ground
+      max_range: 80.0
+      min_range: 0.5              # ignore near-field points (robot body shadow)
+      uprightness_thr: 0.5        # normal vector uprightness threshold
+      adaptive_seed_selection_margin: -1.1
+      RNR_ver_angle_thr: -15.0    # vertical angle threshold for range-normal residual
+      verbose: false
