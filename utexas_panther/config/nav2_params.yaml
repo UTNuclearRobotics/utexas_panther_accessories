@@ -172,7 +172,7 @@
 
         footprint: '[[-0.44, -0.46], [-0.44, 0.46], [0.44, 0.46], [0.44, -0.46]]'
 
-        plugins: [obstacle_layer, stvl_layer, inflation_layer]
+        plugins: [stvl_layer, inflation_layer]
         inflation_layer:
           plugin: nav2_costmap_2d::InflationLayer
           cost_scaling_factor: 3.5
@@ -231,7 +231,7 @@
           update_footprint_enabled: true
           combination_method: 1       # 1 is correct for STVL unlike VoxelLayer
           origin_z: 0.0
-          publish_voxel_map: true     # set false in production
+          publish_voxel_map: false     # set false in production
           transform_tolerance: 0.2
           mapping_mode: false
           observation_sources: pointcloud
@@ -556,7 +556,7 @@
       scan_time: 0.1
       range_min: 0.3
       range_max: 50.0
-      target_frame: os_lidar
+      target_frame: <namespace>/base_link
       transform_tolerance: 0.1
       inf_epsilon: 1.0
       use_inf: true
