@@ -170,7 +170,7 @@
         always_send_full_costmap: true
         rolling_window: true
 
-        footprint: '[[<min_x>, <min_y>], [<min_x>, <max_y>], [<max_x>, <max_y>], [<max_x>, <min_y>]]'
+        footprint: '[[-0.44, -0.46], [-0.44, 0.46], [0.44, 0.46], [0.44, -0.46]]'
 
         plugins: [obstacle_layer, stvl_layer, inflation_layer]
         inflation_layer:
@@ -272,7 +272,7 @@
         always_send_full_costmap: true
         track_unknown_space: true # if false, treats unknown space as free space, else as unknown space
 
-        footprint: '[[<min_x>, <min_y>], [<min_x>, <max_y>], [<max_x>, <max_y>], [<max_x>, <min_y>]]'
+        footprint: '[[-0.44, -0.46], [-0.44, 0.46], [0.44, 0.46], [0.44, -0.46]]'
 
         plugins: [static_layer, obstacle_layer, inflation_layer]
         inflation_layer:
