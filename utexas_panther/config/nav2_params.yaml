@@ -254,7 +254,7 @@
             decay_acceleration: 15.0    # how fast voxels decay when in sensor view
             model_type: 0               # 0=3D lidar, 1=depth camera
             ring_slope_filter_enabled: true
-            slope_threshold: 1.0   # dz/dxy <= this suppressed as ground (0.70 = 35 deg)
+            slope_threshold: 1.43   # dz/dxy <= this suppressed as ground (1.0 = tan(45 deg))
             min_dz: 0.03            # metres — noise floor
 
 
@@ -448,7 +448,7 @@
       pf_z: 0.99
 
       recovery_alpha_slow: 0.001
-      recovery_alpha_fast: 0.0125
+      recovery_alpha_fast: 0.025
 
       resample_interval: 1
       save_pose_rate: 0.5

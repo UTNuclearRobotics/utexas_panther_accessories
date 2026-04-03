@@ -66,7 +66,7 @@ def launch_setup(context, *args, **kwargs):
         name='twist_stamper',
         output='screen',
         remappings=[
-            ('cmd_vel_in', '/panther/controller/cmd_vel'),
+            ('cmd_vel_in', '/panther/cmd_vel'),
             ('cmd_vel_out', '/cmd_vel_out'),
         ],
         parameters=[{
