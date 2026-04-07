@@ -81,7 +81,7 @@
         vx_std: 0.6
         vy_std: 0.0
         wz_std: 0.3
-        vx_max: 1.0
+        vx_max: 1.2
         vx_min: -0.5
         vy_max: 0.0
         wz_max: 1.0
