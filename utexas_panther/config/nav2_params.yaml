@@ -421,10 +421,10 @@
       tf_broadcast: true
       transform_tolerance: 1.0
 
-      alpha1: 0.3
-      alpha2: 0.4
-      alpha3: 0.3
-      alpha4: 0.3
+      alpha1: 0.2
+      alpha2: 0.2
+      alpha3: 0.2
+      alpha4: 0.2
       alpha5: 0.2
 
       do_beamskip: true
@@ -435,14 +435,14 @@
       lambda_short: 0.1
 
       laser_model_type: likelihood_field_prob
-      laser_likelihood_max_dist: 4.0   # was 2.0
+      laser_likelihood_max_dist: 3.0   # was 2.0
       laser_max_range: 50.0
       laser_min_range: 0.3
 
-      max_beams: 360
+      max_beams: 180
 
-      max_particles: 8000
-      min_particles: 2000
+      max_particles: 5000
+      min_particles: 1000
 
       pf_err: 0.05
       pf_z: 0.99
@@ -457,10 +457,10 @@
       update_min_a: 0.1
       update_min_d: 0.15
 
-      z_hit: 0.64
-      z_rand: 0.30
+      z_hit: 0.75           # was 0.5
+      z_rand: 0.2          # was 0.5
       z_max: 0.05
-      z_short: 0.01
+      z_short: 0.01         # was 0.05 — short returns less common with lidar outdoors
 
   ### MAP SERVER ###
 
