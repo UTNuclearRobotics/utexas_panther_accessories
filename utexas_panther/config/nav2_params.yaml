@@ -4,9 +4,9 @@
   bt_navigator:
     ros__parameters:
       use_sim_time: false
-      global_frame: <namespace>/map
-      robot_base_frame: <namespace>/base_link
-      odom_topic: <namespace>/odometry/filtered
+      global_frame: /map
+      robot_base_frame: base_link
+      odom_topic: odometry/filtered
       plugin_lib_names:
         - is_estop
         - nav2_compute_path_to_pose_action_bt_node
@@ -47,7 +47,7 @@
       use_sim_time: false
 
       controller_frequency: 10.0
-      odom_topic: <namespace>/odometry/filtered
+      odom_topic: odometry/filtered
       costmap_update_timeout: 0.5
 
       min_x_velocity_threshold: 0.01
@@ -154,10 +154,11 @@
   local_costmap:
     local_costmap:
       ros__parameters:
+        use_tf_prefix: false
         use_sim_time: false
 
-        global_frame: <namespace>/odom
-        robot_base_frame: <namespace>/base_link
+        global_frame: odom
+        robot_base_frame: base_link
         transform_tolerance: 0.1
 
         update_frequency: 10.0
@@ -181,7 +182,7 @@
         static_layer:
           plugin: nav2_costmap_2d::StaticLayer
           map_subscribe_transient_local: true
-          map_topic: /<namespace>/map
+          map_topic: /map
 
         obstacle_layer:
           plugin: nav2_costmap_2d::VoxelLayer
@@ -261,10 +262,11 @@
   global_costmap:
     global_costmap:
       ros__parameters:
+        use_tf_prefix: false
         use_sim_time: false
 
-        global_frame: <namespace>/map
-        robot_base_frame: <namespace>/base_link
+        global_frame: map
+        robot_base_frame: base_link
         transform_tolerance: 0.1
 
         update_frequency: 1.0
@@ -287,7 +289,7 @@
         static_layer:
           plugin: nav2_costmap_2d::StaticLayer
           map_subscribe_transient_local: true
-          map_topic: /<namespace>/map
+          map_topic: /map
 
         obstacle_layer:
           plugin: nav2_costmap_2d::ObstacleLayer
@@ -346,8 +348,8 @@
     ros__parameters:
       use_sim_time: false
 
-      global_frame: <namespace>/odom
-      robot_base_frame: <namespace>/base_link
+      global_frame: odom
+      robot_base_frame: base_link
       transform_tolerance: 0.1
 
       costmap_topic: local_costmap/costmap_raw
@@ -392,7 +394,7 @@
       min_velocity: [-0.5, 0.0, -1.0]
       max_accel: [1.5, 0.0, 2.0]
       max_decel: [-1.5, 0.0, -2.0]
-      odom_topic: <namespace>/odometry/filtered
+      odom_topic: odometry/filtered
       odom_duration: 0.1
       deadband_velocity: [0.0, 0.0, 0.0]
       velocity_timeout: 1.0
@@ -403,9 +405,9 @@
     ros__parameters:
       use_sim_time: false
 
-      global_frame_id: <namespace>/map
-      odom_frame_id: <namespace>/odom
-      base_frame_id: <namespace>/base_link
+      global_frame_id: map
+      odom_frame_id: odom
+      base_frame_id: base_link
 
       scan_topic: <scan_topic>
 
@@ -468,7 +470,7 @@
     ros__parameters:
       use_sim_time: false
       yaml_filename: map.yaml
-      frame_id: <namespace>/map
+      frame_id: map
 
   map_autosaver:
     ros__parameters:
@@ -478,7 +480,7 @@
 
   ### SLAM ###
 
-  # FIX: was "<namespace>/slam_toolbox" which produces "panther/slam_toolbox" after substitution —
+  # FIX: was "slam_toolbox" which produces "panther/slam_toolbox" after substitution —
   # a slash in a /**:-scoped node name never matches the running node. Bare node name is correct.
   slam_toolbox:
     ros__parameters:
@@ -491,9 +493,9 @@
       ceres_loss_function: None
 
       # ROS Parameters
-      odom_frame: <namespace>/odom
-      map_frame: <namespace>/map
-      base_frame: <namespace>/base_link
+      odom_frame: odom
+      map_frame: map
+      base_frame: base_link
       scan_topic: <scan_topic>
       mode: mapping
 
@@ -559,7 +561,7 @@
       scan_time: 0.1
       range_min: 0.3
       range_max: 50.0
-      target_frame: <namespace>/base_link
+      target_frame: base_link
       transform_tolerance: 0.1
       inf_epsilon: 1.0
       use_inf: true
@@ -568,7 +570,7 @@
     ros__parameters:
       input_topic: <observation_topic>
       output_topic: <observation_topic>_filtered
-      target_frame: <namespace>/base_link
+      target_frame: base_link
       min_x: <min_x>
       max_x: <max_x>
       min_y: <min_y>
