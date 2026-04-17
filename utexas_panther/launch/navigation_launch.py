@@ -212,7 +212,7 @@ def generate_launch_description():
                 output="screen",
                 arguments=["--ros-args", "--log-level", log_level],
                 parameters=[
-                    {"use_sim_time": use_sim_time},
+                    {"use_sim_time": PythonExpression([use_sim_time, " in ['true', 'True', '1']"])},
                     {"autostart": autostart},
                     {"node_names": lifecycle_nodes},
                 ],

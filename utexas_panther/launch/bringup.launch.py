@@ -77,7 +77,7 @@ def generate_launch_description():
     )
     declare_observation_topic_arg = DeclareLaunchArgument(
         "observation_topic",
-        default_value="/ouster/points",
+        default_value="ouster/points",
         description="Topic name for LaserScan or PointCloud2 observation messages type.",
     )
     declare_observation_topic_type_arg = DeclareLaunchArgument(
@@ -121,7 +121,7 @@ def generate_launch_description():
 
     # Create our own temporary YAML files that include substitutions
     param_substitutions = {
-        "use_sim_time": use_sim_time, 
+        "use_sim_time": PythonExpression(["'", use_sim_time, "' == 'true'"]), 
         "yaml_filename": map,
         "tf_prefix": ""  # <--- Forces nodes to treat frames as global/naked
     }
@@ -197,27 +197,6 @@ def generate_launch_description():
         [
             PushRosNamespace(namespace),
             Node(
-                condition=IfCondition(
-                    PythonExpression(["'", observation_topic_type, "' == 'pointcloud'"])
-                ),
-                package="pointcloud_crop_box",
-                executable="pointcloud_crop_box_node",
-                name="pointcloud_crop_box",
-                parameters=[configured_params],
-                output="screen",
-            ),
-            Node(
-                condition=IfCondition(
-                    PythonExpression(["'", observation_topic_type, "' == 'pointcloud'"])
-                ),
-                package="pointcloud_to_laserscan",
-                executable="pointcloud_to_laserscan_node",
-                name="pointcloud_to_laserscan",
-                parameters=[configured_params],
-                remappings=[("cloud_in", observation_topic_filtered,)],
-                output="screen",
-            ),
-            Node(
                 condition=IfCondition(use_composition),
                 name="nav2_container",
                 package="rclcpp_components",
@@ -236,7 +215,7 @@ def generate_launch_description():
                     "namespace": namespace,
                     "params_file": params_file,
                     "use_respawn": use_respawn,
-                    "use_sim_time": use_sim_time,
+                    "use_sim_time": PythonExpression(["'", use_sim_time, "' == 'true'"]),
                 }.items(),
             ),
             IncludeLaunchDescription(
@@ -252,7 +231,7 @@ def generate_launch_description():
                     "params_file": params_file,
                     "use_composition": use_composition,
                     "use_respawn": use_respawn,
-                    "use_sim_time": use_sim_time,
+                    "use_sim_time": PythonExpression(["'", use_sim_time, "' == 'true'"]),
                 }.items(),
             ),
             IncludeLaunchDescription(
@@ -261,7 +240,7 @@ def generate_launch_description():
                 ),
                 launch_arguments={
                     "namespace": namespace,
-                    "use_sim_time": use_sim_time,
+                    "use_sim_time": PythonExpression(["'", use_sim_time, "' == 'true'"]),
                     "autostart": autostart,
                     "params_file": params_file,
                     "use_composition": use_composition,
@@ -297,5 +276,26 @@ def generate_launch_description():
             declare_use_respawn_arg,
             declare_use_sim_time_arg,
             bringup_cmd_group,
+            Node(
+                condition=IfCondition(
+                    PythonExpression(["'", observation_topic_type, "' == 'pointcloud'"])
+                ),
+                package="pointcloud_to_laserscan",
+                executable="pointcloud_to_laserscan_node",
+                name="pointcloud_to_laserscan",
+                parameters=[configured_params],
+                remappings=[("cloud_in", "/panther/ouster/points_filtered",)],
+                output="screen",
+            ),
+            Node(
+                condition=IfCondition(
+                    PythonExpression(["'", observation_topic_type, "' == 'pointcloud'"])
+                ),
+                package="pointcloud_crop_box",
+                executable="pointcloud_crop_box_node",
+                name="pointcloud_crop_box",
+                parameters=[configured_params, {"use_sim_time": True}],
+                output="screen",
+            ),
         ]
     )
