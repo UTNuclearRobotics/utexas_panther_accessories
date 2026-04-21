@@ -78,10 +78,10 @@
         time_steps: 30
         model_dt: 0.1
         batch_size: 1200
-        vx_std: 0.6
+        vx_std: 0.9
         vy_std: 0.0
         wz_std: 0.3
-        vx_max: 1.2
+        vx_max: 2.0
         vx_min: -0.5
         vy_max: 0.0
         wz_max: 1.0
@@ -118,8 +118,8 @@
         CostCritic:
           enabled: true
           cost_power: 1
-          cost_weight: 3.0
-          critical_cost: 200.0
+          cost_weight: 3.81
+          critical_cost: 300.0
           consider_footprint: true
           collision_cost: 1000000.0
           near_goal_distance: 1.0
@@ -388,7 +388,7 @@
       smoothing_frequency: 20.0
       scale_velocities: false
       feedback: OPEN_LOOP
-      max_velocity: [0.8, 0.0, 1.0]
+      max_velocity: [2.0, 0.0, 1.0]
       min_velocity: [-0.5, 0.0, -1.0]
       max_accel: [1.5, 0.0, 2.0]
       max_decel: [-1.5, 0.0, -2.0]
