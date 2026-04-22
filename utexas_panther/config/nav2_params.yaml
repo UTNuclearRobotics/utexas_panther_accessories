@@ -87,7 +87,7 @@
         wz_max: 1.0
         iteration_count: 2
         prune_distance: 5.0
-        transform_tolerance: 0.1
+        transform_tolerance: 0.3
         temperature: 0.3
         gamma: 0.015
         motion_model: DiffDrive
@@ -160,11 +160,11 @@
         robot_base_frame: <namespace>/base_link
         transform_tolerance: 0.1
 
-        update_frequency: 20.0
+        update_frequency: 10.0
         publish_frequency: 2.0
 
-        width: 15
-        height: 15
+        width: 8
+        height: 8
         resolution: 0.04
 
         always_send_full_costmap: false
@@ -225,7 +225,7 @@
           voxel_decay: 0.5            # seconds before a voxel expires — key param for pedestrians
           decay_model: 0              # 0=linear, 1=exponential, -1=persistent
           voxel_size: 0.05
-          track_unknown_space: true
+          track_unknown_space: false
           unknown_threshold: 15
           mark_threshold: 0
           update_footprint_enabled: true
@@ -248,7 +248,7 @@
             inf_is_valid: true
             clear_after_reading: true   # ADD: clears buffer after each costmap read
             filter: "voxel"             # reduces CPU on dense Ouster scans
-            voxel_min_points: 1
+            voxel_min_points: 2
             vertical_fov_angle: 0.785   # Ouster: ~45 deg vertical FOV in radians
             horizontal_fov_angle: 6.283 # 360 degrees
             decay_acceleration: 15.0    # how fast voxels decay when in sensor view
