@@ -1,11 +1,11 @@
 slam_toolbox:
   ros__parameters:
     # Basic parameters
-    use_sim_time: false
+    use_sim_time: true
     base_frame: base_link
     odom_frame: odom
     map_frame: /map
-    scan_topic: /ouster/scan
+    scan_topic: /panther/scan
     mode: mapping
     
     # Performance parameters
