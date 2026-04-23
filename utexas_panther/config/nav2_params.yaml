@@ -3,7 +3,7 @@
   ### NAVIGATION ###
   bt_navigator:
     ros__parameters:
-      use_sim_time: true
+      use_sim_time:  true
       global_frame: map
       robot_base_frame: base_link
       odom_topic: /odometry/filtered
@@ -36,15 +36,15 @@
 
   bt_navigator_navigate_through_poses_rclcpp_node:
     ros__parameters:
-      use_sim_time: true
+      use_sim_time:  true
 
   bt_navigator_navigate_to_pose_rclcpp_node:
     ros__parameters:
-      use_sim_time: true
+      use_sim_time:  true
 
   controller_server:
     ros__parameters:
-      use_sim_time: true
+      use_sim_time:  true
 
       controller_frequency: 10.0
       odom_topic: /odometry/filtered
@@ -155,7 +155,7 @@
     local_costmap:
       ros__parameters:
         use_tf_prefix: false
-        use_sim_time: true
+        use_sim_time:  true
 
         global_frame: odom
         robot_base_frame: base_link
@@ -263,7 +263,7 @@
     global_costmap:
       ros__parameters:
         use_tf_prefix: false
-        use_sim_time: true
+        use_sim_time:  true
 
         global_frame: map
         robot_base_frame: base_link
@@ -319,7 +319,7 @@
 
   planner_server:
     ros__parameters:
-      use_sim_time: true
+      use_sim_time:  true
       expected_planner_frequency: 1.0
 
       planner_plugins: [GridBased]
@@ -342,11 +342,11 @@
 
   smoother_server:
     ros__parameters:
-      use_sim_time: true
+      use_sim_time:  true
 
   behavior_server:
     ros__parameters:
-      use_sim_time: true
+      use_sim_time:  true
 
       global_frame: odom
       robot_base_frame: base_link
@@ -376,7 +376,7 @@
 
   waypoint_follower:
     ros__parameters:
-      use_sim_time: true
+      use_sim_time:  true
       loop_rate: 20
       stop_on_failure: false
       waypoint_task_executor_plugin: wait_at_waypoint
@@ -386,7 +386,7 @@
 
   velocity_smoother:
     ros__parameters:
-      use_sim_time: true
+      use_sim_time:  true
       smoothing_frequency: 20.0
       scale_velocities: false
       feedback: OPEN_LOOP
@@ -403,7 +403,7 @@
 
   amcl:
     ros__parameters:
-      use_sim_time: true
+      use_sim_time:  true
 
       global_frame_id: map
       odom_frame_id: odom
@@ -468,13 +468,13 @@
 
   map_server:
     ros__parameters:
-      use_sim_time: true
+      use_sim_time:  true
       yaml_filename: map.yaml
       frame_id: map
 
   map_autosaver:
     ros__parameters:
-      use_sim_time: true
+      use_sim_time:  true
       autosave_period: 15.0
       map_directory: /map
 
@@ -548,11 +548,11 @@
       minimum_distance_penalty: 0.5
       use_response_expansion: true
 
-      use_sim_time: true
+      use_sim_time:  true
 
 pointcloud_to_laserscan:
   ros__parameters:
-    use_sim_time: true
+    use_sim_time:  true
     min_height: 0.1
     max_height: 2.0
     angle_min: -3.14
@@ -578,4 +578,4 @@ pointcloud_crop_box:
     min_z: <min_z>
     max_z: <max_z>
     negative: true
-    use_sim_time: true
+    use_sim_time:  true

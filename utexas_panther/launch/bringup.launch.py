@@ -12,13 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import tempfile
 
 from launch import LaunchDescription
 from launch.actions import (
     DeclareLaunchArgument,
     GroupAction,
     IncludeLaunchDescription,
+    OpaqueFunction,
     SetEnvironmentVariable,
+    SetLaunchConfiguration,
 )
 from launch.conditions import IfCondition, UnlessCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
@@ -31,7 +34,7 @@ from launch.substitutions import (
 from launch_ros.actions import Node, PushRosNamespace
 from launch_ros.descriptions import ParameterFile
 from launch_ros.substitutions import FindPackageShare
-from nav2_common.launch import ReplaceString, RewrittenYaml
+from nav2_common.launch import RewrittenYaml
 
 
 def generate_launch_description():
@@ -39,7 +42,6 @@ def generate_launch_description():
     launch_dir = PathJoinSubstitution([husarion_ugv_navigation, "launch"])
     utexas_panther = FindPackageShare("utexas_panther")
     utexas_panther_launch_dir = PathJoinSubstitution([utexas_panther, "launch"])
-    patchworkpp_share = FindPackageShare("patchworkpp")
 
     autostart = LaunchConfiguration("autostart")
     log_level = LaunchConfiguration("log_level")
@@ -47,12 +49,12 @@ def generate_launch_description():
     namespace = LaunchConfiguration("namespace")
     observation_topic = LaunchConfiguration("observation_topic")
     observation_topic_type = LaunchConfiguration("observation_topic_type")
-    params_file = LaunchConfiguration("params_file")
     robot_model = LaunchConfiguration("robot_model")
     slam = LaunchConfiguration("slam")
     use_composition = LaunchConfiguration("use_composition")
     use_respawn = LaunchConfiguration("use_respawn")
     use_sim_time = LaunchConfiguration("use_sim_time")
+    use_rviz = LaunchConfiguration("use_rviz")
 
     declare_autostart_arg = DeclareLaunchArgument(
         "autostart",
@@ -93,7 +95,6 @@ def generate_launch_description():
         ),
         description="Path to the parameters file to use for all nav2 related nodes",
     )
-
     declare_robot_model_arg = DeclareLaunchArgument(
         "robot_model",
         default_value=EnvironmentVariable(name="ROBOT_MODEL_NAME", default_value="panther"),
@@ -115,26 +116,13 @@ def generate_launch_description():
     )
     declare_use_sim_time_arg = DeclareLaunchArgument(
         "use_sim_time",
-        default_value="false",
+        default_value="true",
         description="Use simulation (Gazebo) clock if true.",
     )
-
-    # Create our own temporary YAML files that include substitutions
-    param_substitutions = {
-        "use_sim_time": PythonExpression(["'", use_sim_time, "' == 'true'"]), 
-        "yaml_filename": map,
-        "tf_prefix": ""  # <--- Forces nodes to treat frames as global/naked
-    }
-
-    namespace_ext = PythonExpression(["'", namespace, "' + '/' if '", namespace, "' else ''"])
-    scan_topic = PythonExpression(
-        [
-            "'scan' if '",
-            observation_topic_type,
-            "' == 'pointcloud' else '",
-            observation_topic,
-            "'",
-        ]
+    declare_use_rviz_arg = DeclareLaunchArgument(
+        "use_rviz",
+        default_value="true",
+        description="Whether to launch RViz.",
     )
 
     robot_bounding_box = {
@@ -153,49 +141,101 @@ def generate_launch_description():
             "max_x": 0.38,
             "max_y": 0.33,
             "max_z": 0.5,
-        }
+        },
     }
-    observation_topic_filtered = PythonExpression(
-        ["'", observation_topic, "_filtered'"],
-    )
-    def override_params_file(robot_model_name):
+
+    # OpaqueFunction: resolves all <placeholder> substitutions at launch time
+    # by reading the yaml, doing string replacements, and writing a temp file.
+    # use_sim_time and yaml_filename are intentionally LEFT for RewrittenYaml
+    # to handle, since it correctly coerces types via convert_types=True.
+    def resolve_placeholders(context, *args, **kwargs):
+        robot_model_name = LaunchConfiguration("robot_model").perform(context)
+        namespace_val = LaunchConfiguration("namespace").perform(context)
+        observation_topic_val = LaunchConfiguration("observation_topic").perform(context)
+        observation_topic_type_val = LaunchConfiguration("observation_topic_type").perform(context)
+        params_file_val = LaunchConfiguration("params_file").perform(context)
+
         bounding_box = robot_bounding_box[robot_model_name]
-        params = ReplaceString(
-            source_file=params_file,
-            replacements={
-                "<namespace>/": namespace_ext,
-                "<min_x>": str(bounding_box["min_x"]),
-                "<max_x>": str(bounding_box["max_x"]),
-                "<min_y>": str(bounding_box["min_y"]),
-                "<max_y>": str(bounding_box["max_y"]),
-                "<min_z>": str(bounding_box["min_z"]),
-                "<max_z>": str(bounding_box["max_z"]),
-                "<observation_topic>": observation_topic,
-                "<observation_topic_type>": observation_topic_type,
-                "<scan_topic>": scan_topic,
-            },
-            condition=IfCondition(
-                PythonExpression(["'", robot_model, f"' == '{robot_model_name}'"])
-            ),
-        )
+        namespace_ext_val = namespace_val + "/" if namespace_val else ""
+        scan_topic_val = "scan" if observation_topic_type_val == "pointcloud" else observation_topic_val
 
-        return params
+        with open(params_file_val, "r") as f:
+            content = f.read()
 
-    params_file = override_params_file("panther")
-    params_file = override_params_file("lynx")
+        # Only replace structural <placeholder> tokens here.
+        # use_sim_time and yaml_filename are handled by RewrittenYaml below.
+        replacements = {
+            "<namespace>/": namespace_ext_val,
+            "<min_x>": str(bounding_box["min_x"]),
+            "<max_x>": str(bounding_box["max_x"]),
+            "<min_y>": str(bounding_box["min_y"]),
+            "<max_y>": str(bounding_box["max_y"]),
+            "<min_z>": str(bounding_box["min_z"]),
+            "<max_z>": str(bounding_box["max_z"]),
+            "<observation_topic>": observation_topic_val,
+            "<observation_topic_type>": observation_topic_type_val,
+            "<scan_topic>": scan_topic_val,
+        }
+
+        for placeholder, value in replacements.items():
+            content = content.replace(placeholder, str(value))
+
+        tmp = tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False)
+        tmp.write(content)
+        tmp.flush()
+        tmp.close()
+
+        return [SetLaunchConfiguration("resolved_params_file", tmp.name)]
+
+    opaque_params = OpaqueFunction(function=resolve_placeholders)
+    resolved_params_file = LaunchConfiguration("resolved_params_file")
+
+    # RewrittenYaml handles use_sim_time and yaml_filename correctly
+    # via LaunchConfiguration substitutions with convert_types=True.
+    param_substitutions = {
+        "use_sim_time": use_sim_time,
+        "yaml_filename": map,
+    }
 
     configured_params = ParameterFile(
         RewrittenYaml(
-            source_file=params_file,
+            source_file=resolved_params_file,
             param_rewrites=param_substitutions,
             convert_types=True,
         ),
         allow_substs=True,
     )
 
+    observation_topic_filtered = PythonExpression(
+        ["'", observation_topic, "_filtered'"],
+    )
+
+    rviz_config_file = PathJoinSubstitution([utexas_panther, "config", "rviz.rviz"])
+
     bringup_cmd_group = GroupAction(
         [
             PushRosNamespace(namespace),
+            Node(
+                condition=IfCondition(
+                    PythonExpression(["'", observation_topic_type, "' == 'pointcloud'"])
+                ),
+                package="pointcloud_crop_box",
+                executable="pointcloud_crop_box_node",
+                name="pointcloud_crop_box",
+                parameters=[configured_params],
+                output="screen",
+            ),
+            Node(
+                condition=IfCondition(
+                    PythonExpression(["'", observation_topic_type, "' == 'pointcloud'"])
+                ),
+                package="pointcloud_to_laserscan",
+                executable="pointcloud_to_laserscan_node",
+                name="pointcloud_to_laserscan",
+                parameters=[configured_params],
+                remappings=[("cloud_in", observation_topic_filtered)],
+                output="screen",
+            ),
             Node(
                 condition=IfCondition(use_composition),
                 name="nav2_container",
@@ -213,9 +253,9 @@ def generate_launch_description():
                 launch_arguments={
                     "autostart": autostart,
                     "namespace": namespace,
-                    "params_file": params_file,
+                    "params_file": resolved_params_file,
                     "use_respawn": use_respawn,
-                    "use_sim_time": PythonExpression(["'", use_sim_time, "' == 'true'"]),
+                    "use_sim_time": use_sim_time,
                 }.items(),
             ),
             IncludeLaunchDescription(
@@ -228,10 +268,10 @@ def generate_launch_description():
                     "container_name": "nav2_container",
                     "map": map,
                     "namespace": namespace,
-                    "params_file": params_file,
+                    "params_file": resolved_params_file,
                     "use_composition": use_composition,
                     "use_respawn": use_respawn,
-                    "use_sim_time": PythonExpression(["'", use_sim_time, "' == 'true'"]),
+                    "use_sim_time": use_sim_time,
                 }.items(),
             ),
             IncludeLaunchDescription(
@@ -240,9 +280,9 @@ def generate_launch_description():
                 ),
                 launch_arguments={
                     "namespace": namespace,
-                    "use_sim_time": PythonExpression(["'", use_sim_time, "' == 'true'"]),
+                    "use_sim_time": use_sim_time,
                     "autostart": autostart,
-                    "params_file": params_file,
+                    "params_file": resolved_params_file,
                     "use_composition": use_composition,
                     "use_respawn": use_respawn,
                     "container_name": "nav2_container",
@@ -275,26 +315,16 @@ def generate_launch_description():
             declare_use_composition_arg,
             declare_use_respawn_arg,
             declare_use_sim_time_arg,
-            bringup_cmd_group,
+            declare_use_rviz_arg,
+            opaque_params,          # step 1: replace <placeholders> → temp yaml
+            bringup_cmd_group,      # step 2: RewrittenYaml rewrites use_sim_time + yaml_filename
             Node(
-                condition=IfCondition(
-                    PythonExpression(["'", observation_topic_type, "' == 'pointcloud'"])
-                ),
-                package="pointcloud_to_laserscan",
-                executable="pointcloud_to_laserscan_node",
-                name="pointcloud_to_laserscan",
-                parameters=[configured_params],
-                remappings=[("cloud_in", "/ouster/points_filtered",)],
-                output="screen",
-            ),
-            Node(
-                condition=IfCondition(
-                    PythonExpression(["'", observation_topic_type, "' == 'pointcloud'"])
-                ),
-                package="pointcloud_crop_box",
-                executable="pointcloud_crop_box_node",
-                name="pointcloud_crop_box",
-                parameters=[configured_params, {"use_sim_time": True}],
+                condition=IfCondition(use_rviz),
+                package="rviz2",
+                executable="rviz2",
+                name="rviz2",
+                arguments=["-d", rviz_config_file],
+                parameters=[{"use_sim_time": use_sim_time}],
                 output="screen",
             ),
         ]
