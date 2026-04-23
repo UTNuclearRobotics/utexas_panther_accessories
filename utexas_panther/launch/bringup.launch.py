@@ -77,7 +77,7 @@ def generate_launch_description():
     )
     declare_observation_topic_arg = DeclareLaunchArgument(
         "observation_topic",
-        default_value="ouster/points",
+        default_value="/ouster/points",
         description="Topic name for LaserScan or PointCloud2 observation messages type.",
     )
     declare_observation_topic_type_arg = DeclareLaunchArgument(
@@ -284,7 +284,7 @@ def generate_launch_description():
                 executable="pointcloud_to_laserscan_node",
                 name="pointcloud_to_laserscan",
                 parameters=[configured_params],
-                remappings=[("cloud_in", "/panther/ouster/points_filtered",)],
+                remappings=[("cloud_in", "/ouster/points_filtered",)],
                 output="screen",
             ),
             Node(
