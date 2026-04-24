@@ -81,13 +81,13 @@
         vx_std: 0.9
         vy_std: 0.0
         wz_std: 0.3
-        vx_max: 2.0
+        vx_max: 1.6
         vx_min: -0.5
         vy_max: 0.0
         wz_max: 1.0
         iteration_count: 2
-        prune_distance: 5.0
-        transform_tolerance: 0.3
+        prune_distance: 8.0
+        transform_tolerance: 0.1
         temperature: 0.3
         gamma: 0.015
         motion_model: DiffDrive
@@ -97,7 +97,7 @@
           min_turning_r: 0.05
         critics: [ConstraintCritic, CostCritic, GoalCritic, GoalAngleCritic, PathAlignCritic, PathFollowCritic, PathAngleCritic, PreferForwardCritic]
         ConstraintCritic:
-          enabled: false
+          enabled: true
           cost_power: 1
           cost_weight: 4.0
         GoalCritic:
@@ -163,8 +163,8 @@
         update_frequency: 10.0
         publish_frequency: 2.0
 
-        width: 8
-        height: 8
+        width: 15
+        height: 15
         resolution: 0.04
 
         always_send_full_costmap: false
