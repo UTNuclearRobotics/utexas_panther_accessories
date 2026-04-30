@@ -87,19 +87,6 @@ def launch_setup(context, *args, **kwargs):
         parameters=[{'use_sim_time': False}],
     )
 
-    image_republisher = Node(
-        package='image_transport',
-        executable='republish',
-        name='oak_image_republisher',
-        output='screen',
-        arguments=['raw', 'compressed'],
-        remappings=[
-            ('in',  '/oak/rgb/image_rect'),
-            ('out', '/oak/rgb/image_rect'),
-        ],
-        parameters=[{'use_sim_time': False}],
-    )
-
     return [
         depthai_camera,
         ouster_lidar,
@@ -107,7 +94,6 @@ def launch_setup(context, *args, **kwargs):
         twist_stamper,
         initial_pose_relay,
         estop_relay,
-        image_republisher,
     ]
 
 
