@@ -87,45 +87,18 @@ def launch_setup(context, *args, **kwargs):
         parameters=[{'use_sim_time': False}],
     )
 
-    # pointcloud_crop_box_node = Node(
-    #     package="pointcloud_crop_box",
-    #     executable="pointcloud_crop_box_node",
-    #     name="pointcloud_crop_box",
-    #     # No namespace — intentionally global scope.
-    #     parameters=[
-    #         {
-    #             "input_topic": "/ouster/points",
-    #             "output_topic": "/ouster/points_filtered",
-    #             "target_frame": "panther/base_link",
-    #             "negative": True,
-    #             "min_x": -0.55,
-    #             "max_x":  0.55,
-    #             "min_y": -0.55,
-    #             "max_y":  0.55,
-    #             "min_z": -0.10,
-    #             "max_z":  0.60,
-    #             "visualize_bounding_box": False,
-    #             "use_sim_time": False,
-    #         }
-    #     ],
-    #     remappings=[
-    #         ("/tf", "/tf"),
-    #         ("/tf_static", "/tf_static"),
-    #     ],
-    #     output="screen",
-    # )
-
-    # cmd_relay = Node(
-    #     package='topic_tools',
-    #     executable='relay',
-    #     name='cmd_vel_nav_topic_relay',
-    #     output='screen',
-    #     arguments=[
-    #         '/cmd_vel_nav',
-    #         '/panther/controller/cmd_vel'
-    #     ],
-    #     parameters=[{'use_sim_time': False}],
-    # )
+    image_republisher = Node(
+        package='image_transport',
+        executable='republish',
+        name='oak_image_republisher',
+        output='screen',
+        arguments=['raw', 'compressed'],
+        remappings=[
+            ('in',  '/oak/rgb/image_rect'),
+            ('out', '/oak/rgb/image_rect'),
+        ],
+        parameters=[{'use_sim_time': False}],
+    )
 
     return [
         depthai_camera,
@@ -134,8 +107,7 @@ def launch_setup(context, *args, **kwargs):
         twist_stamper,
         initial_pose_relay,
         estop_relay,
-        # pointcloud_crop_box_node,
-        # cmd_relay,
+        image_republisher,
     ]
 
 
