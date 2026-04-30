@@ -32,7 +32,12 @@ def launch_setup(context, *args, **kwargs):
         package="tf2_ros",
         executable="static_transform_publisher",
         name="static_transform_publisher_lidar",
-        arguments=["0.0", "0.0", "0.589", "0.0", "0.0", "0.0", "panther/base_link", "os_sensor"],
+        arguments=[
+            "--x", "0.0", "--y", "0.0", "--z", "0.589",
+            "--roll", "0.0", "--pitch", "0.0", "--yaw", "0.0",
+            "--frame-id", "panther/base_link",
+            "--child-frame-id", "os_sensor"
+        ],
     )
 
     return [

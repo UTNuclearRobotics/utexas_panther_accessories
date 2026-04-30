@@ -32,6 +32,7 @@ from launch_ros.actions import Node, PushRosNamespace
 from launch_ros.descriptions import ParameterFile
 from launch_ros.substitutions import FindPackageShare
 from nav2_common.launch import ReplaceString, RewrittenYaml
+from launch.actions import TimerAction
 
 
 def generate_launch_description():
@@ -202,17 +203,17 @@ def generate_launch_description():
                 parameters=[configured_params],
                 output="screen",
             ),
-            # Node(
-            #     condition=IfCondition(
-            #         PythonExpression(["'", observation_topic_type, "' == 'pointcloud'"])
-            #     ),
-            #     package="pointcloud_to_laserscan",
-            #     executable="pointcloud_to_laserscan_node",
-            #     name="pointcloud_to_laserscan",
-            #     parameters=[configured_params],
-            #     remappings=[("cloud_in", observation_topic_filtered,)],
-            #     output="screen",
-            # ),
+            Node(
+                condition=IfCondition(
+                    PythonExpression(["'", observation_topic_type, "' == 'pointcloud'"])
+                ),
+                package="pointcloud_to_laserscan",
+                executable="pointcloud_to_laserscan_node",
+                name="pointcloud_to_laserscan",
+                parameters=[configured_params],
+                remappings=[("cloud_in", observation_topic,)],
+                output="screen",
+            ),
             Node(
                 condition=IfCondition(use_composition),
                 name="nav2_container",
@@ -251,19 +252,24 @@ def generate_launch_description():
                     "use_sim_time": use_sim_time,
                 }.items(),
             ),
-            IncludeLaunchDescription(
-                PythonLaunchDescriptionSource(
-                    PathJoinSubstitution([utexas_panther_launch_dir, "navigation_launch.py"])
-                ),
-                launch_arguments={
-                    "namespace": namespace,
-                    "use_sim_time": use_sim_time,
-                    "autostart": autostart,
-                    "params_file": params_file,
-                    "use_composition": use_composition,
-                    "use_respawn": use_respawn,
-                    "container_name": "nav2_container",
-                }.items(),
+            TimerAction(
+                period=20.0,
+                actions=[
+                    IncludeLaunchDescription(
+                        PythonLaunchDescriptionSource(
+                            PathJoinSubstitution([utexas_panther_launch_dir, "navigation_launch.py"])
+                        ),
+                        launch_arguments={
+                            "namespace": namespace,
+                            "use_sim_time": use_sim_time,
+                            "autostart": autostart,
+                            "params_file": params_file,
+                            "use_composition": use_composition,
+                            "use_respawn": use_respawn,
+                            "container_name": "nav2_container",
+                        }.items(),
+                    ),
+                ]
             ),
             Node(
                 condition=IfCondition(slam),
