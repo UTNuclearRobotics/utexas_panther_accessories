@@ -202,17 +202,17 @@ def generate_launch_description():
                 parameters=[configured_params],
                 output="screen",
             ),
-            Node(
-                condition=IfCondition(
-                    PythonExpression(["'", observation_topic_type, "' == 'pointcloud'"])
-                ),
-                package="pointcloud_to_laserscan",
-                executable="pointcloud_to_laserscan_node",
-                name="pointcloud_to_laserscan",
-                parameters=[configured_params],
-                remappings=[("cloud_in", observation_topic_filtered,)],
-                output="screen",
-            ),
+            # Node(
+            #     condition=IfCondition(
+            #         PythonExpression(["'", observation_topic_type, "' == 'pointcloud'"])
+            #     ),
+            #     package="pointcloud_to_laserscan",
+            #     executable="pointcloud_to_laserscan_node",
+            #     name="pointcloud_to_laserscan",
+            #     parameters=[configured_params],
+            #     remappings=[("cloud_in", observation_topic_filtered,)],
+            #     output="screen",
+            # ),
             Node(
                 condition=IfCondition(use_composition),
                 name="nav2_container",

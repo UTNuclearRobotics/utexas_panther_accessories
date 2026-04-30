@@ -2,7 +2,7 @@ ouster/os_driver:
   ros__parameters:
     # sensor_hostname[required]: hostname or IP address of the sensor (IP4 or
     # IP6).
-    sensor_hostname: '192.168.1.100'
+    sensor_hostname: '169.254.175.115'
     # udp_dest[optional]: hostname or multicast group IP where the sensor will
     # send UDP data packets.
     udp_dest: ''
@@ -64,7 +64,7 @@ ouster/os_driver:
     # proc_mask[optional]: use any combination of the 4 flags IMG, PCL, IMU and
     # SCAN to enable or disable their respective messages.
     # proc_mask: IMU|PCL|SCAN|IMG|RAW
-    proc_mask: IMU|PCL
+    proc_mask: IMU|PCL|SCAN
     # scan_ring[optional]: use this parameter in conjunction with the SCAN flag
     # to select which beam of the LidarScan to use when producing the LaserScan
     # message. Choose a value the range [0, sensor_beams_count).

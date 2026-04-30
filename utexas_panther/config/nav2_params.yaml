@@ -319,7 +319,7 @@
 
       planner_plugins: [GridBased]
       GridBased:
-        plugin: nav2_smac_planner/SmacPlanner2D
+        plugin: nav2_smac_planner::SmacPlanner2D
         tolerance: 0.125
         downsample_costmap: true
         downsampling_factor: 2
@@ -354,11 +354,11 @@
       # FIX: was "recovery_plugins" which is the pre-Humble name; correct key is "behavior_plugins"
       behavior_plugins: [spin, backup, wait]
       spin:
-        plugin: nav2_behaviors/Spin
+        plugin: nav2_behaviors::Spin
       backup:
-        plugin: nav2_behaviors/BackUp
+        plugin: nav2_behaviors::BackUp
       wait:
-        plugin: nav2_behaviors/Wait
+        plugin: nav2_behaviors::Wait
 
       # spin & backup
       simulate_ahead_time: 2.0
