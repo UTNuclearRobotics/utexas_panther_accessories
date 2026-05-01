@@ -35,7 +35,6 @@ def launch_setup(context, *args, **kwargs):
         }.items(),
     )
 
-    # Relay node: copies /panther/hardware/estop → /hardware/estop
     goal_relay = Node(
         package='topic_tools',
         executable='relay',
