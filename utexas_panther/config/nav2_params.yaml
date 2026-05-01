@@ -47,7 +47,7 @@
     ros__parameters:
       use_sim_time: false
 
-      controller_frequency: 20.0
+      controller_frequency: 10.0
       odom_topic: <namespace>/odometry/filtered
       costmap_update_timeout: 0.5
 
@@ -76,19 +76,19 @@
       controller_plugins: [FollowPath]
       FollowPath:
         plugin: nav2_mppi_controller::MPPIController
-        time_steps: 60
-        model_dt: 0.05
+        time_steps: 30
+        model_dt: 0.1
         batch_size: 1200
-        vx_std: 0.6
+        vx_std: 0.9
         vy_std: 0.0
         wz_std: 0.3
-        vx_max: 1.0
+        vx_max: 1.6
         vx_min: -0.5
         vy_max: 0.0
         wz_max: 1.0
         iteration_count: 2
-        prune_distance: 5.0
-        transform_tolerance: 0.5
+        prune_distance: 8.0
+        transform_tolerance: 0.1
         temperature: 0.3
         gamma: 0.015
         motion_model: DiffDrive
@@ -98,7 +98,7 @@
           min_turning_r: 0.05
         critics: [ConstraintCritic, CostCritic, GoalCritic, GoalAngleCritic, PathAlignCritic, PathFollowCritic, PathAngleCritic, PreferForwardCritic]
         ConstraintCritic:
-          enabled: false
+          enabled: true
           cost_power: 1
           cost_weight: 4.0
         GoalCritic:
@@ -119,15 +119,15 @@
         CostCritic:
           enabled: true
           cost_power: 1
-          cost_weight: 3.0
-          critical_cost: 200.0
+          cost_weight: 8.0
+          critical_cost: 120.0
           consider_footprint: true
           collision_cost: 1000000.0
           near_goal_distance: 1.0
         PathAlignCritic:
           enabled: true
           cost_power: 1
-          cost_weight: 8.0
+          cost_weight: 2.0
           max_path_occupancy_ratio: 0.05
           trajectory_point_step: 4
           threshold_to_consider: 1.0
@@ -162,13 +162,13 @@
         transform_tolerance: 0.5
 
         update_frequency: 10.0
-        publish_frequency: 5.0
+        publish_frequency: 2.0
 
         width: 15
         height: 15
         resolution: 0.04
 
-        always_send_full_costmap: true
+        always_send_full_costmap: false
         rolling_window: true
 
         footprint: '[[-0.44, -0.46], [-0.44, 0.46], [0.44, 0.46], [0.44, -0.46]]'
@@ -191,7 +191,7 @@
           combination_method: 0
           origin_z: 0.0
           z_resolution: 0.05
-          z_voxels: 40
+          z_voxels: 16
           unknown_threshold: 39
           mark_threshold: 0
           pointcloud:
@@ -223,10 +223,10 @@
         stvl_layer:
           plugin: spatio_temporal_voxel_layer/SpatioTemporalVoxelLayer
           enabled: true
-          voxel_decay: 2.0            # seconds before a voxel expires — key param for pedestrians
+          voxel_decay: 0.5            # seconds before a voxel expires — key param for pedestrians
           decay_model: 0              # 0=linear, 1=exponential, -1=persistent
           voxel_size: 0.05
-          track_unknown_space: true
+          track_unknown_space: false
           unknown_threshold: 15
           mark_threshold: 0
           update_footprint_enabled: true
@@ -249,11 +249,14 @@
             inf_is_valid: true
             clear_after_reading: true   # ADD: clears buffer after each costmap read
             filter: "voxel"             # reduces CPU on dense Ouster scans
-            voxel_min_points: 1
+            voxel_min_points: 2
             vertical_fov_angle: 0.785   # Ouster: ~45 deg vertical FOV in radians
             horizontal_fov_angle: 6.283 # 360 degrees
-            decay_acceleration: 25.0    # how fast voxels decay when in sensor view
+            decay_acceleration: 15.0    # how fast voxels decay when in sensor view
             model_type: 0               # 0=3D lidar, 1=depth camera
+            ring_slope_filter_enabled: true
+            slope_threshold: 1.43   # dz/dxy <= this suppressed as ground (1.0 = tan(45 deg))
+            min_dz: 0.03            # metres — noise floor
 
 
   global_costmap:
@@ -298,7 +301,7 @@
             clearing: true
             obstacle_max_range: 10.0
             raytrace_max_range: 12.0
-            min_obstacle_height: 0.135
+            min_obstacle_height: 1.0
             max_obstacle_height: 2.0
             inf_is_valid: true
           laserscan:
@@ -386,7 +389,7 @@
       smoothing_frequency: 20.0
       scale_velocities: false
       feedback: OPEN_LOOP
-      max_velocity: [0.8, 0.0, 1.0]
+      max_velocity: [2.0, 0.0, 1.0]
       min_velocity: [-0.5, 0.0, -1.0]
       max_accel: [1.5, 0.0, 2.0]
       max_decel: [-1.5, 0.0, -2.0]
@@ -428,11 +431,11 @@
       do_beamskip: true
       beam_skip_distance: 0.5
       beam_skip_error_threshold: 0.9
-      beam_skip_threshold: 0.3
+      beam_skip_threshold: 0.5
 
       lambda_short: 0.1
 
-      laser_model_type: likelihood_field
+      laser_model_type: likelihood_field_prob
       laser_likelihood_max_dist: 3.0   # was 2.0
       laser_max_range: 50.0
       laser_min_range: 0.3
@@ -445,8 +448,8 @@
       pf_err: 0.05
       pf_z: 0.99
 
-      recovery_alpha_slow: 0.001   # was 0.0
-      recovery_alpha_fast: 0.1     # was 0.0
+      recovery_alpha_slow: 0.001
+      recovery_alpha_fast: 0.025
 
       resample_interval: 1
       save_pose_rate: 0.5
@@ -455,8 +458,8 @@
       update_min_a: 0.1
       update_min_d: 0.15
 
-      z_hit: 0.45           # was 0.5
-      z_rand: 0.49          # was 0.5
+      z_hit: 0.75           # was 0.5
+      z_rand: 0.2          # was 0.5
       z_max: 0.05
       z_short: 0.01         # was 0.05 — short returns less common with lidar outdoors
 
@@ -500,7 +503,7 @@
       transform_publish_period: 0.04
       map_update_interval: 1.0
       resolution: 0.05
-      max_laser_range: 50.0
+      max_laser_range: 100.0
       min_laser_range: 0.3
       minimum_time_interval: 0.05
       transform_timeout: 5.5
@@ -511,15 +514,15 @@
       # General Parameters
       use_scan_matching: true
       use_scan_barycenter: true
-      minimum_travel_distance: 0.2
-      minimum_travel_heading: 0.1
+      minimum_travel_distance: 0.5
+      minimum_travel_heading: 0.2
       scan_buffer_size: 30
-      scan_buffer_maximum_scan_distance: 10.0
+      scan_buffer_maximum_scan_distance: 40.0
       link_match_minimum_response_fine: 0.1
       link_scan_maximum_distance: 1.5
       loop_search_maximum_distance: 50.0
       do_loop_closing: true
-      loop_match_minimum_chain_size: 10
+      loop_match_minimum_chain_size: 5
       loop_match_maximum_variance_coarse: 3.0
       loop_match_minimum_response_coarse: 0.35
       loop_match_minimum_response_fine: 0.55
@@ -530,7 +533,7 @@
       correlation_search_space_smear_deviation: 0.1
 
       # Loop Closure Parameters
-      loop_search_space_dimension: 15.0
+      loop_search_space_dimension: 20.0
       loop_search_space_resolution: 0.05
       loop_search_space_smear_deviation: 0.03
 
