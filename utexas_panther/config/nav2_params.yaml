@@ -6,7 +6,7 @@
       use_sim_time: false
       global_frame: panther/map
       robot_base_frame: panther/base_link
-      odom_topic: panther/odometry/filtered
+      odom_topic: /panther/odometry/filtered
       default_bt_xml_filename: "/root/nav_ws/install/husarion_ugv_navigation/share/husarion_ugv_navigation/behavior_trees/navigate_to_pose_w_replanning_and_recovery.xml"
       # plugin_lib_names:
       #  - is_estop
@@ -48,7 +48,7 @@
       use_sim_time: false
 
       controller_frequency: 10.0
-      odom_topic: panther/odometry/filtered
+      odom_topic: /panther/odometry/filtered
       costmap_update_timeout: 0.5
 
       min_x_velocity_threshold: 0.01
@@ -196,7 +196,7 @@
           mark_threshold: 0
           pointcloud:
             data_type: PointCloud2
-            topic: /ouster/points
+            topic: /ouster/point_filtered
             observation_persistence: 0.0
             expected_update_rate: 0.0
             marking: true
@@ -238,7 +238,7 @@
           observation_sources: pointcloud
           pointcloud:
             data_type: PointCloud2
-            topic: /ouster/points
+            topic: /ouster/points_filtered
             marking: true
             clearing: true
             obstacle_range: 9.0
@@ -296,7 +296,7 @@
           observation_sources: pointcloud
           pointcloud:
             data_type: PointCloud2
-            topic: /ouster/points
+            topic: /ouster/points_filtered
             marking: true
             clearing: true
             obstacle_max_range: 10.0
@@ -393,7 +393,7 @@
       min_velocity: [-0.5, 0.0, -1.0]
       max_accel: [1.5, 0.0, 2.0]
       max_decel: [-1.5, 0.0, -2.0]
-      odom_topic: panther/odometry/filtered
+      odom_topic: /panther/odometry/filtered
       odom_duration: 0.1
       deadband_velocity: [0.0, 0.0, 0.0]
       velocity_timeout: 1.0
@@ -560,15 +560,15 @@
       scan_time: 0.1
       range_min: 0.3
       range_max: 50.0
-      target_frame: os_lidar
+      target_frame: panther/base_link
       transform_tolerance: 0.5
       inf_epsilon: 1.0
       use_inf: true
 
   pointcloud_crop_box:
     ros__parameters:
-      input_topic: <observation_topic>
-      output_topic: <observation_topic>_filtered
+      input_topic: /ouster/points
+      output_topic: /ouster/points_filtered
       target_frame: panther/base_link
       min_x: <min_x>
       max_x: <max_x>
