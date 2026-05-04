@@ -1,0 +1,109 @@
+# Panther Domain Bridge Configuration
+#
+# Domain 0 = Pi hardware stack (ros2_control, ekf, safety_manager, hardware_controller)
+# Domain 1 = Nuvo autonomy stack (Nav2, slam_toolbox, APPLD, YOLO)
+#
+# Run with:
+#   ros2 run domain_bridge domain_bridge --ros-args -p config_file:=/path/to/panther_domain_bridge.yaml
+
+topics:
+
+  # ── Domain 0 → 1 ────────────────────────────────────────────────────────────
+  # Nav2 needs fused odometry from Pi's EKF for localization and costmaps
+  /panther/odometry/filtered:
+    type: nav_msgs/msg/Odometry
+    from_domain: 0
+    to_domain: 1
+
+  # Nav2 EKF on Nuvo (if running dual EKF) or directly for localization
+  /panther/imu/data:
+    type: sensor_msgs/msg/Imu
+    from_domain: 0
+    to_domain: 1
+
+  # Nav2 BT navigator subscribes to e_stop to pause navigation
+  /panther/hardware/e_stop:
+    type: std_msgs/msg/Bool
+    from_domain: 0
+    to_domain: 1
+    qos_subscriber:
+      reliability: reliable
+      durability: transient_local
+      history: keep_last
+      depth: 1
+    qos_publisher:
+      reliability: reliable
+      durability: transient_local
+      history: keep_last
+      depth: 1
+
+  # robot_state_publisher on Nuvo needs joint states for TF tree
+  /panther/joint_states:
+    type: sensor_msgs/msg/JointState
+    from_domain: 0
+    to_domain: 1
+
+  # odom -> base_link transform published by ros2_control on Pi
+  # Nav2 needs this to track robot pose in the map
+  /tf:
+    type: tf2_msgs/msg/TFMessage
+    from_domain: 0
+    to_domain: 1
+    qos_subscriber:
+      reliability: reliable
+      durability: volatile
+      history: keep_last
+      depth: 100
+    qos_publisher:
+      reliability: reliable
+      durability: volatile
+      history: keep_last
+      depth: 100
+
+  # Static transforms from Pi (sensor mounts, base_link geometry)
+  /tf_static:
+    type: tf2_msgs/msg/TFMessage
+    from_domain: 0
+    to_domain: 1
+    qos:
+      reliability: reliable
+      durability: transient_local
+      history: keep_last
+      depth: 100
+
+  # ── Domain 1 → 0 ────────────────────────────────────────────────────────────
+  # Nav2 controller output → drive_controller on Pi
+  # joy2twist and ekf_filter also subscribe to this on Domain 0
+  /panther/cmd_vel_nav:
+    type: geometry_msgs/msg/Twist
+    from_domain: 1
+    to_domain: 0
+    qos_subscriber:
+      reliability: reliable
+      history: keep_last
+      depth: 1
+    qos_publisher:
+      reliability: reliable
+      history: keep_last
+      depth: 1
+
+  # map -> odom transform published by slam_toolbox on Nuvo
+  # Pi's EKF needs this to publish correct filtered odometry
+  # Note: bridge tf separately per direction to avoid loops
+  # If ekf is only on Pi and slam_toolbox only on Nuvo this is needed:
+  # /tf:  <-- would create a loop, handle via remap instead (see notes below)
+
+services:
+
+  # ── Domain 0 → 1 ────────────────────────────────────────────────────────────
+  # Allow Nav2 BT or operators on Nuvo to reset e_stop
+  /panther/hardware/e_stop_reset:
+    type: std_srvs/srv/Trigger
+    from_domain: 0
+    to_domain: 1
+
+  # Allow Nav2 BT to trigger e_stop if needed
+  /panther/hardware/e_stop_trigger:
+    type: std_srvs/srv/Trigger
+    from_domain: 0
+    to_domain: 1
