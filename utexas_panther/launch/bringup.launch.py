@@ -194,16 +194,16 @@ def generate_launch_description():
     bringup_cmd_group = GroupAction(
         [
             PushRosNamespace(namespace),
-            Node(
-                condition=IfCondition(
-                    PythonExpression(["'", observation_topic_type, "' == 'pointcloud'"])
-                ),
-                package="pointcloud_crop_box",
-                executable="pointcloud_crop_box_node",
-                name="pointcloud_crop_box",
-                parameters=[configured_params],
-                output="screen",
-            ),
+            # Node(
+            #     condition=IfCondition(
+            #         PythonExpression(["'", observation_topic_type, "' == 'pointcloud'"])
+            #     ),
+            #     package="pointcloud_crop_box",
+            #     executable="pointcloud_crop_box_node",
+            #     name="pointcloud_crop_box",
+            #     parameters=[configured_params],
+            #     output="screen",
+            # ),
             Node(
                 condition=IfCondition(
                     PythonExpression(["'", observation_topic_type, "' == 'pointcloud'"])
