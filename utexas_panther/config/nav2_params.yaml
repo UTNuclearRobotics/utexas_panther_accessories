@@ -7,9 +7,9 @@
       global_frame: panther/map
       robot_base_frame: panther/base_link
       odom_topic: /panther/odometry/filtered
-      default_bt_xml_filename: "/root/nav_ws/install/husarion_ugv_navigation/share/husarion_ugv_navigation/behavior_trees/navigate_to_pose_w_replanning_and_recovery.xml"
-      # plugin_lib_names:
-      #  - is_estop
+      # default_bt_xml_filename: "/root/nav_ws/install/husarion_ugv_navigation/share/husarion_ugv_navigation/behavior_trees/navigate_to_pose_w_replanning_and_recovery.xml"
+      plugin_lib_names:
+       - is_estop
       #  - nav2_compute_path_to_pose_action_bt_node
       #  - nav2_follow_path_action_bt_node  
       #  - nav2_back_up_action_bt_node
