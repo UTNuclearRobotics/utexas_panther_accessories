@@ -176,7 +176,7 @@
         inflation_layer:
           plugin: nav2_costmap_2d::InflationLayer
           cost_scaling_factor: 3.0
-          inflation_radius: 0.25
+          inflation_radius: 0.6
 
         static_layer:
           plugin: nav2_costmap_2d::StaticLayer
@@ -281,7 +281,7 @@
         inflation_layer:
           plugin: nav2_costmap_2d::InflationLayer
           cost_scaling_factor: 3.0
-          inflation_radius: 0.25
+          inflation_radius: 0.6
           inflate_around_unknown: false
           inflate_unknown: false
         static_layer:
