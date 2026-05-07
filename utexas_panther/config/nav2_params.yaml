@@ -210,7 +210,7 @@
             inf_is_valid: true
           laserscan:
             data_type: LaserScan
-            topic: /ouster/scan
+            topic: /panther/scan
             marking: true
             clearing: true
             obstacle_max_range: 5.0
@@ -306,7 +306,7 @@
             inf_is_valid: true
           laserscan:
             data_type: LaserScan
-            topic: /ouster/scan
+            topic: /panther/scan
             marking: true
             clearing: true
             obstacle_max_range: 10.0
@@ -408,7 +408,7 @@
       odom_frame_id: panther/odom
       base_frame_id: panther/base_link
 
-      scan_topic: /ouster/scan
+      scan_topic: /panther/scan
 
       robot_model_type: nav2_amcl::DifferentialMotionModel
 
@@ -483,6 +483,8 @@
   # a slash in a /**:-scoped node name never matches the running node. Bare node name is correct.
   slam_toolbox:
     ros__parameters:
+      use_sim_time: false
+
       # Plugin params
       solver_plugin: solver_plugins::CeresSolver
       ceres_linear_solver: SPARSE_NORMAL_CHOLESKY
@@ -495,7 +497,7 @@
       odom_frame: panther/odom
       map_frame: panther/map
       base_frame: panther/base_link
-      scan_topic: /ouster/scan
+      scan_topic: /panther/scan
       mode: mapping
 
       debug_logging: false
@@ -546,8 +548,6 @@
       minimum_angle_penalty: 0.9
       minimum_distance_penalty: 0.5
       use_response_expansion: true
-
-      use_sim_time: false
 
   pointcloud_to_laserscan:
     ros__parameters:
