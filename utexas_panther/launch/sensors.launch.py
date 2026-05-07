@@ -22,7 +22,10 @@ def launch_setup(context, *args, **kwargs):
         PythonLaunchDescriptionSource(
             [PathJoinSubstitution([FindPackageShare("utexas_panther"), "launch", "camera.launch.py"])]
         ),
-        launch_arguments={"camera_i_restart_on_diagnostics_error": "true"}.items(),
+        launch_arguments={
+            "camera_i_restart_on_diagnostics_error": "true",
+            "pointcloud.enable": "true",
+        }.items(),
     )
     # ros2 launch ouster_ros sensor.launch.xml sensor_hostname:=192.168.1.100 viz:=false
     ouster_lidar = IncludeLaunchDescription(

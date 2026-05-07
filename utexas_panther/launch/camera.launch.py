@@ -21,7 +21,10 @@ def launch_setup(context, *args, **kwargs):
         PythonLaunchDescriptionSource(
             [PathJoinSubstitution([FindPackageShare("depthai_ros_driver"), "launch", "camera.launch.py"])]
         ),
-        launch_arguments={"camera_i_restart_on_diagnostics_error": "true"}.items(),
+        launch_arguments={
+            "camera_i_restart_on_diagnostics_error": "true",
+            "pointcloud.enable": "true",
+        }.items(),
     )
 
     # ros2 run tf2_ros static_transform_publisher 0.2286 0.0 0.5715 0.0 0.0 0.0 /panther/base_link /oak-d-base-frame
