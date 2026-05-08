@@ -68,7 +68,7 @@
       goal_checker:
         plugin: nav2_controller::SimpleGoalChecker
         stateful: true
-        xy_goal_tolerance: 0.25
+        xy_goal_tolerance: 1.0
         yaw_goal_tolerance: 0.4
 
       # MPPI controller
@@ -176,7 +176,7 @@
         inflation_layer:
           plugin: nav2_costmap_2d::InflationLayer
           cost_scaling_factor: 3.0
-          inflation_radius: 0.6
+          inflation_radius: 1.0
 
         static_layer:
           plugin: nav2_costmap_2d::StaticLayer
@@ -281,7 +281,7 @@
         inflation_layer:
           plugin: nav2_costmap_2d::InflationLayer
           cost_scaling_factor: 3.0
-          inflation_radius: 0.6
+          inflation_radius: 1.0
           inflate_around_unknown: false
           inflate_unknown: false
         static_layer:
