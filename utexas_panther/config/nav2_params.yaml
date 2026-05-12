@@ -51,7 +51,15 @@
       # MPPI controller
       controller_plugins: [FollowPath]
       FollowPath:
-        plugin: nav2_mppi_controller::MPPIController
+        # plugin: nav2_mppi_controller::MPPIController
+        plugin: "nav2_rotation_shim_controller::RotationShimController"
+        primary_controller: nav2_mppi_controller::MPPIController
+        angular_dist_threshold: 0.785
+        forward_sampling_distance: 0.5
+        rotate_to_heading_angular_vel: 1.8
+        max_angular_accel: 3.2
+        simulate_ahead_time: 1.0
+        rotate_to_goal_heading: false
         time_steps: 30
         model_dt: 0.1
         batch_size: 1200
@@ -214,7 +222,7 @@
           observation_sources: pointcloud
           pointcloud:
             data_type: PointCloud2
-            topic: /ouster/points_filtered
+            topic: /ouster/points
             marking: true
             clearing: true
             obstacle_range: 9.0
@@ -272,7 +280,7 @@
           observation_sources: pointcloud
           pointcloud:
             data_type: PointCloud2
-            topic: /ouster/points_filtered
+            topic: /ouster/points
             marking: true
             clearing: true
             obstacle_max_range: 10.0

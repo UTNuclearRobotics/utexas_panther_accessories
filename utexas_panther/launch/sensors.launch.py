@@ -91,7 +91,7 @@ def launch_setup(context, *args, **kwargs):
         depthai_camera,
         ouster_lidar,
         goal_relay,
-        twist_stamper,
+        # twist_stamper,
         initial_pose_relay,
         estop_relay,
     ]
