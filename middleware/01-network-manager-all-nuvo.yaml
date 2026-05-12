@@ -1,0 +1,30 @@
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    enp12s0:
+      addresses:
+      - "192.168.1.10/24"
+      dhcp4: false
+    enp11s0:
+      addresses:
+      - "10.15.20.3/24"
+      dhcp4: false
+    enp10s0:
+      # disable DHCP for this interface since we are using a static IP address
+      dhcp4: false
+      addresses:
+      - "169.254.175.10/24"
+    enp6s0:
+      addresses:
+      - "10.15.20.10/24"
+  wifis:
+    wlp7s0:
+      dhcp4: true
+      dhcp4-overrides:
+        route-metric: 100
+      access-points:
+        "utexas-iot":
+          auth:
+            key-management: "psk"
+            password: "66908216993248810887"
