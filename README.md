@@ -45,3 +45,21 @@ source /opt/ros/humble/setup.bash
 rosdep install --from-paths src --ignore-src -r -y
 colcon build
 ```
+
+## Launching Sensors
+
+The following unified launch file initializes both the OAK-D depth camera and the Ouster LiDAR nodes, establishing the core data streams for perception (image and pointcloud):
+
+```ros2 launch utexas_panther sensors.launch.py```
+
+## Launching Slam
+
+If you are operating in a new environment and need to generate a map, you will want to spin up the SLAM pipeline. The command below launches the main bringup routine with SLAM enabled, configured to consume point cloud data from the Ouster LiDAR.
+
+```ros2 launch utexas_panther bringup.launch.py namespace:=panther observation_topic:=/ouster/points observation_topic_type:=pointcloud slam:=True```
+
+## Launch AMLC
+
+Once you have a saved map of your environment, you can switch from mapping mode to localization mode. Use the AMCL routine to pinpoint the robot's position within a static map. Remember to set a initial pose and drive around a lil bit to snap the robot into a more accurate position.
+
+```ros2 launch utexas_panther bringup.launch.py namespace:=panther observation_topic:=/ouster/points observation_topic_type:=pointcloud slam:=False map:=/phantom_map.yaml```
