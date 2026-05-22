@@ -362,7 +362,6 @@
       footprint_topic: local_costmap/published_footprint
       cycle_frequency: 10.0
 
-      # FIX: was "recovery_plugins" which is the pre-Humble name; correct key is "behavior_plugins"
       behavior_plugins: [spin, backup, drive_on_heading, wait, assisted_teleop]
       spin:
         plugin: nav2_behaviors/Spin
